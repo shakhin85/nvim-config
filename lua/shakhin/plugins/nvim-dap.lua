@@ -347,14 +347,14 @@ return {
 		"folke/which-key.nvim",
 		config = function()
 			local wk = require("which-key")
-			wk.register({
-				["<leader>d"] = { name = "🐛 Debug" },
-				["<F5>"] = "Start/Continue",
-				["<F6>"] = "Pause",
-				["<F7>"] = "Step Into",
-				["<F8>"] = "Step Over",
-				["<F9>"] = "Step Out",
-				["<F12>"] = "Toggle Breakpoint",
+			wk.add({
+				{ "<F12>", desc = "Toggle Breakpoint" },
+				{ "<F5>", desc = "Start/Continue" },
+				{ "<F6>", desc = "Pause" },
+				{ "<F7>", desc = "Step Into" },
+				{ "<F8>", desc = "Step Over" },
+				{ "<F9>", desc = "Step Out" },
+				{ "<leader>d", group = "🐛 Debug" },
 			})
 		end,
 	},

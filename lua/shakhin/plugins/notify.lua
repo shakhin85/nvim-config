@@ -61,7 +61,7 @@ return {
     local opts = { noremap = true, silent = true }
     
     -- Показать историю уведомлений
-    keymap("n", "<leader>nh", function()
+    keymap("n", "<leader>nn", function()
       require("telescope").extensions.notify.notify()
     end, { desc = "Show notification history" })
     

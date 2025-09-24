@@ -22,22 +22,22 @@ keymap.set("n", "<leader>tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  
 keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
--- Навигация между окнами/панелями
-keymap.set("n", "<C-h>", "<C-w>h", opts) -- Переход в левое окно
-keymap.set("n", "<C-j>", "<C-w>j", opts) -- Переход в нижнее окно
-keymap.set("n", "<C-k>", "<C-w>k", opts) -- Переход в верхнее окно
-keymap.set("n", "<C-l>", "<C-w>l", opts) -- Переход в правое окно
+-- Window navigation
+keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
+keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to window below" })
+keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to window above" })
+keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
 
--- Управление буферами
-keymap.set("n", "<leader>bd", ":bdelete<CR>", opts) -- Закрыть текущий буфер
-keymap.set("n", "<leader>ba", ":bufdo bd<CR>", opts) -- Закрыть все буферы
-keymap.set("n", "<leader>bo", ":only<CR>", opts) -- Оставить только текущее окно
-keymap.set("n", "<leader>bs", ":ls<CR>", opts) -- Показать список буферов
+-- Buffer management
+keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete current buffer" })
+keymap.set("n", "<leader>ba", ":bufdo bd<CR>", { desc = "Delete all buffers" })
+keymap.set("n", "<leader>bo", ":only<CR>", { desc = "Keep only current window" })
+keymap.set("n", "<leader>bs", ":ls<CR>", { desc = "Show buffer list" })
 
 -- ToggleTerm clear terminal
 keymap.set("n", "<leader>tc", ":TermExec cmd='clear'<CR>", { desc = "Clear terminal" })
 
--- Debug keymaps (добавить в основной keymaps.lua для быстрого доступа)
+-- Debug keymaps
 keymap.set("n", "<F5>", ":DebugPythonSimple<CR>", { desc = "Start debugging" })
 keymap.set("n", "<F9>", function()
 	require("dap").toggle_breakpoint()
@@ -52,11 +52,9 @@ keymap.set("n", "<F12>", function()
 	require("dap").continue()
 end, { desc = "Continue" })
 
+-- LazyGit (commented out - uncomment if LazyGit is installed)
 -- keymap.set("n", "<leader>lg", ":LazyGit<CR>", { desc = "Open LazyGit" })
---
----- Bufferline navigation (улучшенные кеймапы для существующего bufferline)
+
+-- Bufferline navigation
 keymap.set("n", "<Tab>", ":BufferLineCycleNext<CR>", { desc = "Next buffer" })
 keymap.set("n", "<S-Tab>", ":BufferLineCyclePrev<CR>", { desc = "Previous buffer" })
---
---
---
