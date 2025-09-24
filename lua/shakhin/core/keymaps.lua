@@ -37,23 +37,11 @@ keymap.set("n", "<leader>bs", ":ls<CR>", { desc = "Show buffer list" })
 -- ToggleTerm clear terminal
 keymap.set("n", "<leader>tc", ":TermExec cmd='clear'<CR>", { desc = "Clear terminal" })
 
--- Debug keymaps
-keymap.set("n", "<F5>", ":DebugPythonSimple<CR>", { desc = "Start debugging" })
-keymap.set("n", "<F9>", function()
-	require("dap").toggle_breakpoint()
-end, { desc = "Toggle breakpoint" })
-keymap.set("n", "<F3>", function()
-	require("dap").step_over()
-end, { desc = "Step over" })
-keymap.set("n", "<F4>", function()
-	require("dap").step_into()
-end, { desc = "Step into" })
-keymap.set("n", "<F12>", function()
-	require("dap").continue()
-end, { desc = "Continue" })
+-- Debug keymaps - removed to avoid conflicts with nvim-dap plugin
+-- DAP plugin handles all F-key bindings for debugging
 
--- LazyGit (commented out - uncomment if LazyGit is installed)
--- keymap.set("n", "<leader>lg", ":LazyGit<CR>", { desc = "Open LazyGit" })
+-- LazyGit
+keymap.set("n", "<leader>lg", "<cmd>LazyGit<CR>", { desc = "Open LazyGit" })
 
 -- Bufferline navigation
 keymap.set("n", "<Tab>", ":BufferLineCycleNext<CR>", { desc = "Next buffer" })
