@@ -19,8 +19,8 @@ keymap.set("n", "<leader>sx", "<cmd>close<CR>", { desc = "Close current split" }
 keymap.set("n", "<leader>to", "<cmd>tabnew<CR>", { desc = "Open new tab" }) -- open new tab
 keymap.set("n", "<leader>tx", "<cmd>tabclose<CR>", { desc = "Close current tab" }) -- close current tab
 keymap.set("n", "<leader>tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  go to next tab
-keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
-keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
+keymap.set("n", "<leader>tP", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab (changed from tp to avoid conflict)
+keymap.set("n", "<leader>tF", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab (changed from tf to avoid conflict)
 
 -- Window navigation
 keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
@@ -28,14 +28,23 @@ keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to window below" })
 keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to window above" })
 keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
 
+-- Window resizing
+keymap.set("n", "<A-h>", "<C-w><", { desc = "Decrease window width" })
+keymap.set("n", "<A-l>", "<C-w>>", { desc = "Increase window width" })
+keymap.set("n", "<A-j>", "<C-w>-", { desc = "Decrease window height" })
+keymap.set("n", "<A-k>", "<C-w>+", { desc = "Increase window height" })
+
+-- Flash-enhanced window and buffer navigation (defined in flash.lua)
+-- <leader>sw for window jump, <leader>sb for buffer jump
+
 -- Buffer management
 keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete current buffer" })
 keymap.set("n", "<leader>ba", ":bufdo bd<CR>", { desc = "Delete all buffers" })
 keymap.set("n", "<leader>bo", ":only<CR>", { desc = "Keep only current window" })
 keymap.set("n", "<leader>bs", ":ls<CR>", { desc = "Show buffer list" })
 
--- ToggleTerm clear terminal
-keymap.set("n", "<leader>tc", ":TermExec cmd='clear'<CR>", { desc = "Clear terminal" })
+-- ToggleTerm clear terminal (moved to avoid conflict with tab commands)
+keymap.set("n", "<leader>tcc", ":TermExec cmd='clear'<CR>", { desc = "Clear terminal" })
 
 -- Debug keymaps - removed to avoid conflicts with nvim-dap plugin
 -- DAP plugin handles all F-key bindings for debugging
@@ -46,3 +55,9 @@ keymap.set("n", "<leader>lg", "<cmd>LazyGit<CR>", { desc = "Open LazyGit" })
 -- Bufferline navigation
 keymap.set("n", "<Tab>", ":BufferLineCycleNext<CR>", { desc = "Next buffer" })
 keymap.set("n", "<S-Tab>", ":BufferLineCyclePrev<CR>", { desc = "Previous buffer" })
+
+--keymaps navigation
+--
+-- In your telescope setup or keymaps section
+-- vim.keymap.set("n", "<leader>fk", require("telescope.builtin").keymaps, { desc = "Find keymaps" })
+--

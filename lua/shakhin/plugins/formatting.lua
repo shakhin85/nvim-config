@@ -4,6 +4,12 @@ return {
   config = function()
     local conform = require("conform")
 
+    -- Add Mason bin directory to PATH for formatters
+    local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
+    if vim.fn.isdirectory(mason_bin) == 1 then
+      vim.env.PATH = mason_bin .. ":" .. vim.env.PATH
+    end
+
     conform.setup({
       formatters_by_ft = {
         javascript = { "prettier" },
@@ -35,5 +41,27 @@ return {
         timeout_ms = 1000,
       })
     end, { desc = "Format file or range (in visual mode)" })
+
+    -- Autopep8 formatting keymap
+    vim.keymap.set({ "n", "v" }, "<leader>ma", function()
+      print("Formatting with autopep8...")
+      conform.format({
+        formatters = { "autopep8" },
+        lsp_fallback = false,
+        async = false,
+        timeout_ms = 1000,
+      })
+    end, { desc = "Format Python file with autopep8" })
+
+    -- Ruff formatting keymap
+    vim.keymap.set({ "n", "v" }, "<leader>mr", function()
+      print("Formatting with ruff...")
+      conform.format({
+        formatters = { "ruff_format" },
+        lsp_fallback = false,
+        async = false,
+        timeout_ms = 1000,
+      })
+    end, { desc = "Format Python file with ruff" })
   end,
 }

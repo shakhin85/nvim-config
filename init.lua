@@ -18,3 +18,5 @@ end
 
 -- Устанавливаем Python provider динамически
 vim.g.python3_host_prog = get_uv_python()
+
+vim.opt.fileformats = { "unix", "dos" }
