@@ -7,8 +7,10 @@ return {
 		{ "folke/neodev.nvim", opts = {} },
 	},
 	config = function()
-		-- import cmp-nvim-lsp plugin
-		local cmp_nvim_lsp = require("cmp_nvim_lsp")
+		-- import lsp capabilities
+		local has_blink, blink = pcall(require, "blink.cmp")
+		local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
+
 		local keymap = vim.keymap -- for conciseness
 
 		-- Отключаем уведомления lua_ls о workspace
@@ -74,7 +76,17 @@ return {
 		})
 
 		-- used to enable autocompletion (assign to every lsp server config)
-		local capabilities = cmp_nvim_lsp.default_capabilities()
+		local capabilities
+		if has_blink then
+			capabilities = blink.get_lsp_capabilities()
+		elseif has_cmp then
+			capabilities = cmp_nvim_lsp.default_capabilities()
+		else
+			capabilities = vim.lsp.protocol.make_client_capabilities()
+		end
+
+		-- Force UTF-16 offset encoding for all LSP servers to avoid conflicts
+		capabilities.offsetEncoding = { "utf-16" }
 
 		-- Diagnostic signs configuration
 		vim.diagnostic.config({
@@ -105,6 +117,8 @@ return {
 		-- Global LSP configuration with autocompletion
 		vim.lsp.config("*", {
 			capabilities = capabilities,
+			-- Ensure consistent offset encoding
+			offset_encoding = "utf-16",
 		})
 
 		-- Python configuration with .venv support
@@ -127,7 +141,7 @@ return {
 				local python_path = get_python_path()
 				if python_path then
 					client.config.settings.python.pythonPath = python_path
-					client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+					client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 				end
 			end,
 		})
@@ -220,6 +234,8 @@ return {
 				},
 			},
 		})
+
+		-- Note: Copilot LSP is managed by copilot.lua plugin, not lspconfig
 
 		-- Commands for Python development
 		vim.api.nvim_create_user_command("PythonPath", function()

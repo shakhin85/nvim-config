@@ -1,507 +1,506 @@
--- ~/.config/nvim/lua/plugins/dap-final.lua
 return {
-	{
-		"mfussenegger/nvim-dap",
-		dependencies = {
-			"igorlfs/nvim-dap-view",
-			"theHamsta/nvim-dap-virtual-text",
-			"rcarriga/cmp-dap",
-			"jay-babu/mason-nvim-dap.nvim",
-			"nvim-telescope/telescope-dap.nvim",
-			"folke/which-key.nvim",
-		},
-		config = function()
-			local dap = require("dap")
-			local dapview = require("dap-view")
-
-			-------------------------------------------------------------------
-			-- dap-view + virtual text
-			-------------------------------------------------------------------
-			dapview.setup()
-			require("nvim-dap-virtual-text").setup()
-
-			dap.listeners.after.event_initialized["dapview_config"] = function()
-				dapview.open()
-			end
-			dap.listeners.before.event_terminated["dapview_config"] = function()
-				dapview.close()
-			end
-			dap.listeners.before.event_exited["dapview_config"] = function()
-				dapview.close()
-			end
-
-			-------------------------------------------------------------------
-			-- mason-nvim-dap
-			-------------------------------------------------------------------
-			require("mason-nvim-dap").setup({
-				ensure_installed = { "python", "delve" },
-				automatic_installation = true,
-			})
-
-			-------------------------------------------------------------------
-			-- Note: nvim-cmp is configured in nvim-cmp.lua with DAP support
-			-------------------------------------------------------------------
-
-			-------------------------------------------------------------------
-			-- Enhanced REPL buffer configuration with autocompletion
-			-------------------------------------------------------------------
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "dap-repl",
-				callback = function(args)
-					local buf = args.buf
-					local opts = { buffer = buf, silent = true }
-
-					-- Setup cmp for this specific dap-repl buffer
-					vim.defer_fn(function()
-						if vim.api.nvim_buf_is_valid(buf) then
-							local cmp = require("cmp")
-							-- Setup buffer-specific cmp configuration
-							cmp.setup.buffer({
-								sources = cmp.config.sources({
-									{ name = "dap", priority = 1000 },
-									{ name = "buffer", priority = 500 },
-									{ name = "path", priority = 250 },
-								}),
-							})
-						end
-					end, 50)
-
-					-- Basic REPL navigation
-					vim.keymap.set("i", "<C-p>", "<Up>", vim.tbl_extend("force", opts, { desc = "Previous command" }))
-					vim.keymap.set("i", "<C-n>", "<Down>", vim.tbl_extend("force", opts, { desc = "Next command" }))
-
-					-- Smart Tab completion for dap-repl
-					vim.keymap.set("i", "<Tab>", function()
-						local cmp = require("cmp")
-						if cmp.visible() then
-							-- If an item is selected, confirm it; otherwise move to next
-							if cmp.get_selected_entry() then
-								cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert, select = true })
-							else
-								cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
-							end
-						else
-							-- Trigger completion after dots, identifiers
-							local line = vim.api.nvim_get_current_line()
-							local col = vim.api.nvim_win_get_cursor(0)[2]
-							local before_cursor = string.sub(line, 1, col)
-
-							if before_cursor:match("[%.%w_]$") then
-								cmp.complete()
-							else
-								-- Default tab behavior
-								vim.api.nvim_feedkeys(
-									vim.api.nvim_replace_termcodes("<Tab>", true, false, true),
-									"n",
-									false
-								)
-							end
-						end
-					end, vim.tbl_extend("force", opts, { desc = "Smart Tab completion" }))
-
-					-- Enter key: confirm completion OR execute command
-					vim.keymap.set("i", "<CR>", function()
-						local cmp = require("cmp")
-						if cmp.visible() and cmp.get_selected_entry() then
-							-- If completion menu is visible and item is selected, confirm it
-							cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert, select = true })
-						else
-							-- Otherwise, execute the command (default Enter behavior)
-							vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", false)
-						end
-					end, vim.tbl_extend("force", opts, { desc = "Confirm completion or execute" }))
-
-					-- C-j/C-k for completion navigation in dap-repl
-					vim.keymap.set("i", "<C-j>", function()
-						local cmp = require("cmp")
-						if cmp.visible() then
-							cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
-						else
-							vim.api.nvim_feedkeys(
-								vim.api.nvim_replace_termcodes("<Down>", true, false, true),
-								"n",
-								false
-							)
-						end
-					end, vim.tbl_extend("force", opts, { desc = "Navigate down completion" }))
-
-					vim.keymap.set("i", "<C-k>", function()
-						local cmp = require("cmp")
-						if cmp.visible() then
-							cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
-						else
-							vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Up>", true, false, true), "n", false)
-						end
-					end, vim.tbl_extend("force", opts, { desc = "Navigate up completion" }))
-
-					-- Manual DAP completion trigger
-					vim.keymap.set("i", "<C-x><C-d>", function()
-						local cmp = require("cmp")
-						cmp.complete()
-					end, vim.tbl_extend("force", opts, { desc = "DAP completion" }))
-
-					-- Clear REPL functionality
-					local function clear_repl()
-						local dap = require("dap")
-						if dap.session() then
-							-- Clear the REPL buffer content
-							vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
-							-- Move cursor to beginning
-							vim.api.nvim_win_set_cursor(0, { 1, 0 })
-							-- Print a clear indicator
-							print("🧹 REPL cleared")
-							-- Return to insert mode if we were in insert mode
-							if vim.fn.mode() == "i" then
-								vim.cmd("startinsert")
-							end
-						else
-							print("⚠️  No active debug session")
-						end
-					end
-
-					-- Primary clear binding - Ctrl+C
-					vim.keymap.set(
-						{ "n", "i" },
-						"<C-c>",
-						clear_repl,
-						vim.tbl_extend("force", opts, { desc = "Clear REPL" })
-					)
-
-					-- Alternative clear binding - leader+rc (REPL Clear)
-					vim.keymap.set(
-						{ "n", "i" },
-						"<leader>rc",
-						clear_repl,
-						vim.tbl_extend("force", opts, { desc = "Clear REPL (alternative)" })
-					)
-
-					-- Override global Tab keymaps in dap-repl Normal mode to prevent BufferLine conflicts
-					-- Tab in Normal mode: enter Insert mode at end of line for REPL input
-					vim.keymap.set("n", "<Tab>", function()
-						-- Move to end of line and enter insert mode for REPL interaction
-						vim.cmd("normal! A")
-					end, vim.tbl_extend("force", opts, { desc = "Enter insert mode for REPL input" }))
-
-					-- Shift+Tab in Normal mode: just disable BufferLine navigation
-					vim.keymap.set("n", "<S-Tab>", function()
-						-- In REPL, Shift+Tab in normal mode does nothing (avoids buffer switching)
-						-- User can use leader+bp/bn or other buffer navigation if needed
-					end, vim.tbl_extend("force", opts, { desc = "Disabled in REPL (use <leader>bp/<leader>bn)" }))
-				end,
-			})
-
-			-------------------------------------------------------------------
-			-- Signs (иконки для breakpoints/stopped)
-			-------------------------------------------------------------------
-			vim.fn.sign_define("DapBreakpoint", { text = "🔴", texthl = "", linehl = "", numhl = "" })
-			vim.fn.sign_define("DapStopped", { text = "⭐", texthl = "", linehl = "Debug", numhl = "" })
-			vim.fn.sign_define("DapLogPoint", { text = "💬", texthl = "", linehl = "", numhl = "" })
-
-			-------------------------------------------------------------------
-			-- Keymaps
-			-------------------------------------------------------------------
-			-- Register all DAP keymaps with which-key (v3 format)
-			local wk = require("which-key")
-			wk.add({
-				-- Function key mappings (avoiding system F keys like F11/F12)
-				{ "<F7>", dap.continue, desc = "DAP Continue/Start" },
-				{ "<F8>", dap.step_over, desc = "DAP Step Over" },
-				{ "<F9>", dap.step_into, desc = "DAP Step Into" },
-				{ "<F6>", dap.step_out, desc = "DAP Step Out" },
-
-				-- Leader-based DAP commands
-				{ "<leader>d", group = "DAP" },
-				{ "<leader>db", dap.toggle_breakpoint, desc = "Toggle Breakpoint" },
-				{
-					"<leader>dB",
-					function()
-						dap.set_breakpoint(vim.fn.input("Condition: "))
-					end,
-					desc = "Conditional Breakpoint",
-				},
-				{
-					"<leader>dp",
-					function()
-						dap.set_breakpoint(nil, nil, vim.fn.input("Log message: "))
-					end,
-					desc = "Log Point",
-				},
-				{ "<leader>dr", dap.repl.open, desc = "Open REPL" },
-				{ "<leader>dl", dap.run_last, desc = "Run Last" },
-				{ "<leader>dx", dap.terminate, desc = "Terminate" },
-				{ "<leader>dv", dapview.toggle, desc = "Toggle View" },
-				{
-					"<leader>ds",
-					function()
-						-- Open dap-view and switch to scopes section
-						dapview.open()
-					end,
-					desc = "Open Debug View",
-				},
-				{ "<leader>dc", "<cmd>Telescope dap commands<CR>", desc = "Commands" },
-				{ "<leader>dC", "<cmd>Telescope dap configurations<CR>", desc = "Configurations" },
-				{ "<leader>dlb", "<cmd>Telescope dap list_breakpoints<CR>", desc = "List Breakpoints" },
-				{ "<leader>dvf", "<cmd>Telescope dap frames<CR>", desc = "Frames" },
-				{ "<leader>dvr", "<cmd>Telescope dap variables<CR>", desc = "Variables" },
-
-				-- Debug View Management
-				{ "<leader>dw", group = "Debug Windows" },
-				{
-					"<leader>dws",
-					function()
-						-- Open dap-view and let user manually add watches using 'i' key
-						require("dap-view").open()
-						print("💡 Tip: Press 'W' to switch to watches, then 'i' to insert expression")
-					end,
-					desc = "Open Watches Panel",
-				},
-				{
-					"<leader>dwb",
-					function()
-						-- Open dap-view (breakpoints will be visible)
-						require("dap-view").open()
-						print("💡 Tip: Press 'B' to switch to breakpoints view")
-					end,
-					desc = "Open Breakpoints Panel",
-				},
-				{
-					"<leader>dwr",
-					function()
-						-- Open REPL via standard DAP
-						require("dap").repl.open()
-					end,
-					desc = "Open REPL",
-				},
-				{
-					"<leader>dwx",
-					function()
-						-- Open dap-view
-						require("dap-view").open()
-						print("💡 Tip: Press 'E' to switch to exceptions view")
-					end,
-					desc = "Open Exceptions Panel",
-				},
-
-				-- Quick evaluation via REPL (this works reliably)
-				{
-					"<leader>dwa",
-					function()
-						local word = vim.fn.expand("<cword>")
-						if word ~= "" then
-							-- Evaluate in REPL
-							local dap = require("dap")
-							if dap.session() then
-								dap.repl.open()
-								-- Insert the expression into REPL
-								vim.defer_fn(function()
-									vim.api.nvim_feedkeys("i" .. word .. "\n", "t", false)
-								end, 100)
-								print("👁️  Evaluating: " .. word)
-							else
-								print("⚠️  No debug session active")
-							end
-						else
-							local expr = vim.fn.input("Expression to evaluate: ")
-							if expr ~= "" then
-								local dap = require("dap")
-								if dap.session() then
-									dap.repl.open()
-									vim.defer_fn(function()
-										vim.api.nvim_feedkeys("i" .. expr .. "\n", "t", false)
-									end, 100)
-									print("👁️  Evaluating: " .. expr)
-								else
-									print("⚠️  No debug session active")
-								end
-							end
-						end
-					end,
-					desc = "Evaluate in REPL (current word or input)",
-				},
-
-				-- Visual mode evaluation
-				{
-					"<leader>dwa",
-					function()
-						-- Get visually selected text
-						local start_pos = vim.fn.getpos("'<")
-						local end_pos = vim.fn.getpos("'>")
-						local lines = vim.fn.getline(start_pos[2], end_pos[2])
-
-						local selected_text = ""
-						if #lines == 1 then
-							selected_text = string.sub(lines[1], start_pos[3], end_pos[3])
-						else
-							-- Multi-line selection
-							selected_text = table.concat(lines, "\n")
-						end
-
-						if selected_text ~= "" then
-							local dap = require("dap")
-							if dap.session() then
-								dap.repl.open()
-								vim.defer_fn(function()
-									vim.api.nvim_feedkeys("i" .. selected_text .. "\n", "t", false)
-								end, 100)
-								print("👁️  Evaluating: " .. selected_text)
-							else
-								print("⚠️  No debug session active")
-							end
-						end
-					end,
-					desc = "Evaluate in REPL (visual selection)",
-					mode = "v",
-				},
-			})
-
-			-------------------------------------------------------------------
-			-- Global watches keymaps for Python files during debug sessions
-			-------------------------------------------------------------------
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "python",
-				callback = function(args)
-					local buf = args.buf
-
-					-- Quick evaluation via REPL for Python files
-					vim.keymap.set("n", "<F10>", function()
-						local word = vim.fn.expand("<cword>")
-						if word ~= "" and require("dap").session() then
-							local dap = require("dap")
-							dap.repl.open()
-							vim.defer_fn(function()
-								vim.api.nvim_feedkeys("i" .. word .. "\n", "t", false)
-							end, 100)
-							print("👁️  Evaluating: " .. word)
-						else
-							print("⚠️  No debug session or no word under cursor")
-						end
-					end, { buffer = buf, desc = "Quick Evaluate in REPL (F10)" })
-
-					vim.keymap.set("v", "<F10>", function()
-						if require("dap").session() then
-							local start_pos = vim.fn.getpos("'<")
-							local end_pos = vim.fn.getpos("'>")
-							local lines = vim.fn.getline(start_pos[2], end_pos[2])
-
-							local selected_text = ""
-							if #lines == 1 then
-								selected_text = string.sub(lines[1], start_pos[3], end_pos[3])
-							else
-								selected_text = table.concat(lines, "\n")
-							end
-
-							if selected_text ~= "" then
-								local dap = require("dap")
-								dap.repl.open()
-								vim.defer_fn(function()
-									vim.api.nvim_feedkeys("i" .. selected_text .. "\n", "t", false)
-								end, 100)
-								print("👁️  Evaluating: " .. selected_text)
-							end
-						else
-							print("⚠️  No debug session active")
-						end
-					end, { buffer = buf, desc = "Quick Evaluate in REPL (F10 visual)" })
-				end,
-			})
-
-			-------------------------------------------------------------------
-			-- Python DAP Adapter Configuration
-			-------------------------------------------------------------------
-			-- Function to get Python path with UV support
-			local function get_python_path()
-				-- Priority: local venv > global environment > system
-				if vim.fn.glob(vim.fn.getcwd() .. "/venv/bin/python") ~= "" then
-					return vim.fn.getcwd() .. "/venv/bin/python"
-				elseif vim.fn.glob(vim.fn.getcwd() .. "/.venv/bin/python") ~= "" then
-					return vim.fn.getcwd() .. "/.venv/bin/python"
-				elseif os.getenv("VIRTUAL_ENV") then
-					return os.getenv("VIRTUAL_ENV") .. "/bin/python"
-				else
-					return "python3"
-				end
-			end
-
-			-- Python adapter
-			dap.adapters.python = {
-				type = "executable",
-				command = get_python_path(),
-				args = { "-m", "debugpy.adapter" },
-				options = {
-					source_filetype = "python",
-				},
-			}
-
-			-- Python configurations
-			dap.configurations.python = {
-				{
-					type = "python",
-					request = "launch",
-					name = "🚀 Launch current file",
-					program = "${file}",
-					console = "integratedTerminal",
-					cwd = "${workspaceFolder}",
-					env = function()
-						local variables = {}
-						for k, v in pairs(vim.fn.environ()) do
-							variables[k] = v
-						end
-						-- Enable better REPL experience
-						variables.PYTHONPATH = (variables.PYTHONPATH or "") .. ":" .. vim.fn.getcwd()
-						return variables
-					end,
-					stopOnEntry = false,
-					justMyCode = true,
-					-- Enhanced REPL configuration
-					subProcess = false,
-					redirect_output = true,
-				},
-				{
-					type = "python",
-					request = "launch",
-					name = "🧪 Launch with pytest",
-					module = "pytest",
-					args = { "${file}", "-v", "-s" },
-					console = "integratedTerminal",
-					cwd = "${workspaceFolder}",
-				},
-				{
-					type = "python",
-					request = "launch",
-					name = "⚡ Launch with arguments",
-					program = "${file}",
-					console = "integratedTerminal",
-					cwd = "${workspaceFolder}",
-					args = function()
-						local args_string = vim.fn.input("Arguments: ")
-						return vim.split(args_string, " ")
-					end,
-				},
-				{
-					type = "python",
-					request = "attach",
-					name = "🔗 Attach to process",
-					connect = function()
-						local host = vim.fn.input("Host [127.0.0.1]: ")
-						host = host ~= "" and host or "127.0.0.1"
-						local port = tonumber(vim.fn.input("Port [5678]: ")) or 5678
-						return { host = host, port = port }
-					end,
-				},
-			}
-
-			-------------------------------------------------------------------
-			-- Project configs (например .nvim/dap.json)
-			-------------------------------------------------------------------
-			if vim.fn.filereadable(".nvim/dap.json") == 1 then
-				local ok, json = pcall(vim.fn.readfile, ".nvim/dap.json")
-				if ok then
-					local ok2, conf = pcall(vim.fn.json_decode, table.concat(json, "\n"))
-					if ok2 and conf then
-						dap.configurations = vim.tbl_deep_extend("force", dap.configurations, conf)
-					end
-				end
-			end
-		end,
-	},
+	-- {
+	-- 	"mfussenegger/nvim-dap",
+	-- 	dependencies = {
+	-- 		"igorlfs/nvim-dap-view",
+	-- 		"theHamsta/nvim-dap-virtual-text",
+	-- 		-- "rcarriga/cmp-dap",
+	-- 		"jay-babu/mason-nvim-dap.nvim",
+	-- 		"nvim-telescope/telescope-dap.nvim",
+	-- 		"folke/which-key.nvim",
+	-- 	},
+	-- 	config = function()
+	-- 		local dap = require("dap")
+	-- 		local dapview = require("dap-view")
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- dap-view + virtual text
+	-- 		-------------------------------------------------------------------
+	-- 		dapview.setup()
+	-- 		require("nvim-dap-virtual-text").setup()
+	--
+	-- 		dap.listeners.after.event_initialized["dapview_config"] = function()
+	-- 			dapview.open()
+	-- 		end
+	-- 		dap.listeners.before.event_terminated["dapview_config"] = function()
+	-- 			dapview.close()
+	-- 		end
+	-- 		dap.listeners.before.event_exited["dapview_config"] = function()
+	-- 			dapview.close()
+	-- 		end
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- mason-nvim-dap
+	-- 		-------------------------------------------------------------------
+	-- 		require("mason-nvim-dap").setup({
+	-- 			ensure_installed = { "python", "delve" },
+	-- 			automatic_installation = true,
+	-- 		})
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Note: nvim-cmp is configured in nvim-cmp.lua with DAP support
+	-- 		-------------------------------------------------------------------
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Enhanced REPL buffer configuration with autocompletion
+	-- 		-------------------------------------------------------------------
+	-- 		vim.api.nvim_create_autocmd("FileType", {
+	-- 			pattern = "dap-repl",
+	-- 			callback = function(args)
+	-- 				local buf = args.buf
+	-- 				local opts = { buffer = buf, silent = true }
+	--
+	-- 				-- Setup cmp for this specific dap-repl buffer
+	-- 				vim.defer_fn(function()
+	-- 					if vim.api.nvim_buf_is_valid(buf) then
+	-- 						local cmp = require("cmp")
+	-- 						-- Setup buffer-specific cmp configuration
+	-- 						cmp.setup.buffer({
+	-- 							sources = cmp.config.sources({
+	-- 								{ name = "dap", priority = 1000 },
+	-- 								{ name = "buffer", priority = 500 },
+	-- 								{ name = "path", priority = 250 },
+	-- 							}),
+	-- 						})
+	-- 					end
+	-- 				end, 50)
+	--
+	-- 				-- Basic REPL navigation
+	-- 				vim.keymap.set("i", "<C-p>", "<Up>", vim.tbl_extend("force", opts, { desc = "Previous command" }))
+	-- 				vim.keymap.set("i", "<C-n>", "<Down>", vim.tbl_extend("force", opts, { desc = "Next command" }))
+	--
+	-- 				-- Smart Tab completion for dap-repl
+	-- 				vim.keymap.set("i", "<Tab>", function()
+	-- 					local cmp = require("cmp")
+	-- 					if cmp.visible() then
+	-- 						-- If an item is selected, confirm it; otherwise move to next
+	-- 						if cmp.get_selected_entry() then
+	-- 							cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert, select = true })
+	-- 						else
+	-- 							cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+	-- 						end
+	-- 					else
+	-- 						-- Trigger completion after dots, identifiers
+	-- 						local line = vim.api.nvim_get_current_line()
+	-- 						local col = vim.api.nvim_win_get_cursor(0)[2]
+	-- 						local before_cursor = string.sub(line, 1, col)
+	--
+	-- 						if before_cursor:match("[%.%w_]$") then
+	-- 							cmp.complete()
+	-- 						else
+	-- 							-- Default tab behavior
+	-- 							vim.api.nvim_feedkeys(
+	-- 								vim.api.nvim_replace_termcodes("<Tab>", true, false, true),
+	-- 								"n",
+	-- 								false
+	-- 							)
+	-- 						end
+	-- 					end
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Smart Tab completion" }))
+	--
+	-- 				-- Enter key: confirm completion OR execute command
+	-- 				vim.keymap.set("i", "<CR>", function()
+	-- 					local cmp = require("cmp")
+	-- 					if cmp.visible() and cmp.get_selected_entry() then
+	-- 						-- If completion menu is visible and item is selected, confirm it
+	-- 						cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert, select = true })
+	-- 					else
+	-- 						-- Otherwise, execute the command (default Enter behavior)
+	-- 						vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", false)
+	-- 					end
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Confirm completion or execute" }))
+	--
+	-- 				-- C-j/C-k for completion navigation in dap-repl
+	-- 				vim.keymap.set("i", "<C-j>", function()
+	-- 					local cmp = require("cmp")
+	-- 					if cmp.visible() then
+	-- 						cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+	-- 					else
+	-- 						vim.api.nvim_feedkeys(
+	-- 							vim.api.nvim_replace_termcodes("<Down>", true, false, true),
+	-- 							"n",
+	-- 							false
+	-- 						)
+	-- 					end
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Navigate down completion" }))
+	--
+	-- 				vim.keymap.set("i", "<C-k>", function()
+	-- 					local cmp = require("cmp")
+	-- 					if cmp.visible() then
+	-- 						cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
+	-- 					else
+	-- 						vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Up>", true, false, true), "n", false)
+	-- 					end
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Navigate up completion" }))
+	--
+	-- 				-- Manual DAP completion trigger
+	-- 				vim.keymap.set("i", "<C-x><C-d>", function()
+	-- 					local cmp = require("cmp")
+	-- 					cmp.complete()
+	-- 				end, vim.tbl_extend("force", opts, { desc = "DAP completion" }))
+	--
+	-- 				-- Clear REPL functionality
+	-- 				local function clear_repl()
+	-- 					local dap = require("dap")
+	-- 					if dap.session() then
+	-- 						-- Clear the REPL buffer content
+	-- 						vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+	-- 						-- Move cursor to beginning
+	-- 						vim.api.nvim_win_set_cursor(0, { 1, 0 })
+	-- 						-- Print a clear indicator
+	-- 						print("🧹 REPL cleared")
+	-- 						-- Return to insert mode if we were in insert mode
+	-- 						if vim.fn.mode() == "i" then
+	-- 							vim.cmd("startinsert")
+	-- 						end
+	-- 					else
+	-- 						print("⚠️  No active debug session")
+	-- 					end
+	-- 				end
+	--
+	-- 				-- Primary clear binding - Ctrl+C
+	-- 				vim.keymap.set(
+	-- 					{ "n", "i" },
+	-- 					"<C-c>",
+	-- 					clear_repl,
+	-- 					vim.tbl_extend("force", opts, { desc = "Clear REPL" })
+	-- 				)
+	--
+	-- 				-- Alternative clear binding - leader+rc (REPL Clear)
+	-- 				vim.keymap.set(
+	-- 					{ "n", "i" },
+	-- 					"<leader>rc",
+	-- 					clear_repl,
+	-- 					vim.tbl_extend("force", opts, { desc = "Clear REPL (alternative)" })
+	-- 				)
+	--
+	-- 				-- Override global Tab keymaps in dap-repl Normal mode to prevent BufferLine conflicts
+	-- 				-- Tab in Normal mode: enter Insert mode at end of line for REPL input
+	-- 				vim.keymap.set("n", "<Tab>", function()
+	-- 					-- Move to end of line and enter insert mode for REPL interaction
+	-- 					vim.cmd("normal! A")
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Enter insert mode for REPL input" }))
+	--
+	-- 				-- Shift+Tab in Normal mode: just disable BufferLine navigation
+	-- 				vim.keymap.set("n", "<S-Tab>", function()
+	-- 					-- In REPL, Shift+Tab in normal mode does nothing (avoids buffer switching)
+	-- 					-- User can use leader+bp/bn or other buffer navigation if needed
+	-- 				end, vim.tbl_extend("force", opts, { desc = "Disabled in REPL (use <leader>bp/<leader>bn)" }))
+	-- 			end,
+	-- 		})
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Signs (иконки для breakpoints/stopped)
+	-- 		-------------------------------------------------------------------
+	-- 		vim.fn.sign_define("DapBreakpoint", { text = "🔴", texthl = "", linehl = "", numhl = "" })
+	-- 		vim.fn.sign_define("DapStopped", { text = "⭐", texthl = "", linehl = "Debug", numhl = "" })
+	-- 		vim.fn.sign_define("DapLogPoint", { text = "💬", texthl = "", linehl = "", numhl = "" })
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Keymaps
+	-- 		-------------------------------------------------------------------
+	-- 		-- Register all DAP keymaps with which-key (v3 format)
+	-- 		local wk = require("which-key")
+	-- 		wk.add({
+	-- 			-- Function key mappings (avoiding system F keys like F11/F12)
+	-- 			{ "<F7>", dap.continue, desc = "DAP Continue/Start" },
+	-- 			{ "<F8>", dap.step_over, desc = "DAP Step Over" },
+	-- 			{ "<F9>", dap.step_into, desc = "DAP Step Into" },
+	-- 			{ "<F6>", dap.step_out, desc = "DAP Step Out" },
+	--
+	-- 			-- Leader-based DAP commands
+	-- 			{ "<leader>d", group = "DAP" },
+	-- 			{ "<leader>db", dap.toggle_breakpoint, desc = "Toggle Breakpoint" },
+	-- 			{
+	-- 				"<leader>dB",
+	-- 				function()
+	-- 					dap.set_breakpoint(vim.fn.input("Condition: "))
+	-- 				end,
+	-- 				desc = "Conditional Breakpoint",
+	-- 			},
+	-- 			{
+	-- 				"<leader>dp",
+	-- 				function()
+	-- 					dap.set_breakpoint(nil, nil, vim.fn.input("Log message: "))
+	-- 				end,
+	-- 				desc = "Log Point",
+	-- 			},
+	-- 			{ "<leader>dr", dap.repl.open, desc = "Open REPL" },
+	-- 			{ "<leader>dl", dap.run_last, desc = "Run Last" },
+	-- 			{ "<leader>dx", dap.terminate, desc = "Terminate" },
+	-- 			{ "<leader>dv", dapview.toggle, desc = "Toggle View" },
+	-- 			{
+	-- 				"<leader>ds",
+	-- 				function()
+	-- 					-- Open dap-view and switch to scopes section
+	-- 					dapview.open()
+	-- 				end,
+	-- 				desc = "Open Debug View",
+	-- 			},
+	-- 			{ "<leader>dc", "<cmd>Telescope dap commands<CR>", desc = "Commands" },
+	-- 			{ "<leader>dC", "<cmd>Telescope dap configurations<CR>", desc = "Configurations" },
+	-- 			{ "<leader>dlb", "<cmd>Telescope dap list_breakpoints<CR>", desc = "List Breakpoints" },
+	-- 			{ "<leader>dvf", "<cmd>Telescope dap frames<CR>", desc = "Frames" },
+	-- 			{ "<leader>dvr", "<cmd>Telescope dap variables<CR>", desc = "Variables" },
+	--
+	-- 			-- Debug View Management
+	-- 			{ "<leader>dw", group = "Debug Windows" },
+	-- 			{
+	-- 				"<leader>dws",
+	-- 				function()
+	-- 					-- Open dap-view and let user manually add watches using 'i' key
+	-- 					require("dap-view").open()
+	-- 					print("💡 Tip: Press 'W' to switch to watches, then 'i' to insert expression")
+	-- 				end,
+	-- 				desc = "Open Watches Panel",
+	-- 			},
+	-- 			{
+	-- 				"<leader>dwb",
+	-- 				function()
+	-- 					-- Open dap-view (breakpoints will be visible)
+	-- 					require("dap-view").open()
+	-- 					print("💡 Tip: Press 'B' to switch to breakpoints view")
+	-- 				end,
+	-- 				desc = "Open Breakpoints Panel",
+	-- 			},
+	-- 			{
+	-- 				"<leader>dwr",
+	-- 				function()
+	-- 					-- Open REPL via standard DAP
+	-- 					require("dap").repl.open()
+	-- 				end,
+	-- 				desc = "Open REPL",
+	-- 			},
+	-- 			{
+	-- 				"<leader>dwx",
+	-- 				function()
+	-- 					-- Open dap-view
+	-- 					require("dap-view").open()
+	-- 					print("💡 Tip: Press 'E' to switch to exceptions view")
+	-- 				end,
+	-- 				desc = "Open Exceptions Panel",
+	-- 			},
+	--
+	-- 			-- Quick evaluation via REPL (this works reliably)
+	-- 			{
+	-- 				"<leader>dwa",
+	-- 				function()
+	-- 					local word = vim.fn.expand("<cword>")
+	-- 					if word ~= "" then
+	-- 						-- Evaluate in REPL
+	-- 						local dap = require("dap")
+	-- 						if dap.session() then
+	-- 							dap.repl.open()
+	-- 							-- Insert the expression into REPL
+	-- 							vim.defer_fn(function()
+	-- 								vim.api.nvim_feedkeys("i" .. word .. "\n", "t", false)
+	-- 							end, 100)
+	-- 							print("👁️  Evaluating: " .. word)
+	-- 						else
+	-- 							print("⚠️  No debug session active")
+	-- 						end
+	-- 					else
+	-- 						local expr = vim.fn.input("Expression to evaluate: ")
+	-- 						if expr ~= "" then
+	-- 							local dap = require("dap")
+	-- 							if dap.session() then
+	-- 								dap.repl.open()
+	-- 								vim.defer_fn(function()
+	-- 									vim.api.nvim_feedkeys("i" .. expr .. "\n", "t", false)
+	-- 								end, 100)
+	-- 								print("👁️  Evaluating: " .. expr)
+	-- 							else
+	-- 								print("⚠️  No debug session active")
+	-- 							end
+	-- 						end
+	-- 					end
+	-- 				end,
+	-- 				desc = "Evaluate in REPL (current word or input)",
+	-- 			},
+	--
+	-- 			-- Visual mode evaluation
+	-- 			{
+	-- 				"<leader>dwa",
+	-- 				function()
+	-- 					-- Get visually selected text
+	-- 					local start_pos = vim.fn.getpos("'<")
+	-- 					local end_pos = vim.fn.getpos("'>")
+	-- 					local lines = vim.fn.getline(start_pos[2], end_pos[2])
+	--
+	-- 					local selected_text = ""
+	-- 					if #lines == 1 then
+	-- 						selected_text = string.sub(lines[1], start_pos[3], end_pos[3])
+	-- 					else
+	-- 						-- Multi-line selection
+	-- 						selected_text = table.concat(lines, "\n")
+	-- 					end
+	--
+	-- 					if selected_text ~= "" then
+	-- 						local dap = require("dap")
+	-- 						if dap.session() then
+	-- 							dap.repl.open()
+	-- 							vim.defer_fn(function()
+	-- 								vim.api.nvim_feedkeys("i" .. selected_text .. "\n", "t", false)
+	-- 							end, 100)
+	-- 							print("👁️  Evaluating: " .. selected_text)
+	-- 						else
+	-- 							print("⚠️  No debug session active")
+	-- 						end
+	-- 					end
+	-- 				end,
+	-- 				desc = "Evaluate in REPL (visual selection)",
+	-- 				mode = "v",
+	-- 			},
+	-- 		})
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Global watches keymaps for Python files during debug sessions
+	-- 		-------------------------------------------------------------------
+	-- 		vim.api.nvim_create_autocmd("FileType", {
+	-- 			pattern = "python",
+	-- 			callback = function(args)
+	-- 				local buf = args.buf
+	--
+	-- 				-- Quick evaluation via REPL for Python files
+	-- 				vim.keymap.set("n", "<F10>", function()
+	-- 					local word = vim.fn.expand("<cword>")
+	-- 					if word ~= "" and require("dap").session() then
+	-- 						local dap = require("dap")
+	-- 						dap.repl.open()
+	-- 						vim.defer_fn(function()
+	-- 							vim.api.nvim_feedkeys("i" .. word .. "\n", "t", false)
+	-- 						end, 100)
+	-- 						print("👁️  Evaluating: " .. word)
+	-- 					else
+	-- 						print("⚠️  No debug session or no word under cursor")
+	-- 					end
+	-- 				end, { buffer = buf, desc = "Quick Evaluate in REPL (F10)" })
+	--
+	-- 				vim.keymap.set("v", "<F10>", function()
+	-- 					if require("dap").session() then
+	-- 						local start_pos = vim.fn.getpos("'<")
+	-- 						local end_pos = vim.fn.getpos("'>")
+	-- 						local lines = vim.fn.getline(start_pos[2], end_pos[2])
+	--
+	-- 						local selected_text = ""
+	-- 						if #lines == 1 then
+	-- 							selected_text = string.sub(lines[1], start_pos[3], end_pos[3])
+	-- 						else
+	-- 							selected_text = table.concat(lines, "\n")
+	-- 						end
+	--
+	-- 						if selected_text ~= "" then
+	-- 							local dap = require("dap")
+	-- 							dap.repl.open()
+	-- 							vim.defer_fn(function()
+	-- 								vim.api.nvim_feedkeys("i" .. selected_text .. "\n", "t", false)
+	-- 							end, 100)
+	-- 							print("👁️  Evaluating: " .. selected_text)
+	-- 						end
+	-- 					else
+	-- 						print("⚠️  No debug session active")
+	-- 					end
+	-- 				end, { buffer = buf, desc = "Quick Evaluate in REPL (F10 visual)" })
+	-- 			end,
+	-- 		})
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Python DAP Adapter Configuration
+	-- 		-------------------------------------------------------------------
+	-- 		-- Function to get Python path with UV support
+	-- 		local function get_python_path()
+	-- 			-- Priority: local venv > global environment > system
+	-- 			if vim.fn.glob(vim.fn.getcwd() .. "/venv/bin/python") ~= "" then
+	-- 				return vim.fn.getcwd() .. "/venv/bin/python"
+	-- 			elseif vim.fn.glob(vim.fn.getcwd() .. "/.venv/bin/python") ~= "" then
+	-- 				return vim.fn.getcwd() .. "/.venv/bin/python"
+	-- 			elseif os.getenv("VIRTUAL_ENV") then
+	-- 				return os.getenv("VIRTUAL_ENV") .. "/bin/python"
+	-- 			else
+	-- 				return "python3"
+	-- 			end
+	-- 		end
+	--
+	-- 		-- Python adapter
+	-- 		dap.adapters.python = {
+	-- 			type = "executable",
+	-- 			command = get_python_path(),
+	-- 			args = { "-m", "debugpy.adapter" },
+	-- 			options = {
+	-- 				source_filetype = "python",
+	-- 			},
+	-- 		}
+	--
+	-- 		-- Python configurations
+	-- 		dap.configurations.python = {
+	-- 			{
+	-- 				type = "python",
+	-- 				request = "launch",
+	-- 				name = "🚀 Launch current file",
+	-- 				program = "${file}",
+	-- 				console = "integratedTerminal",
+	-- 				cwd = "${workspaceFolder}",
+	-- 				env = function()
+	-- 					local variables = {}
+	-- 					for k, v in pairs(vim.fn.environ()) do
+	-- 						variables[k] = v
+	-- 					end
+	-- 					-- Enable better REPL experience
+	-- 					variables.PYTHONPATH = (variables.PYTHONPATH or "") .. ":" .. vim.fn.getcwd()
+	-- 					return variables
+	-- 				end,
+	-- 				stopOnEntry = false,
+	-- 				justMyCode = true,
+	-- 				-- Enhanced REPL configuration
+	-- 				subProcess = false,
+	-- 				redirect_output = true,
+	-- 			},
+	-- 			{
+	-- 				type = "python",
+	-- 				request = "launch",
+	-- 				name = "🧪 Launch with pytest",
+	-- 				module = "pytest",
+	-- 				args = { "${file}", "-v", "-s" },
+	-- 				console = "integratedTerminal",
+	-- 				cwd = "${workspaceFolder}",
+	-- 			},
+	-- 			{
+	-- 				type = "python",
+	-- 				request = "launch",
+	-- 				name = "⚡ Launch with arguments",
+	-- 				program = "${file}",
+	-- 				console = "integratedTerminal",
+	-- 				cwd = "${workspaceFolder}",
+	-- 				args = function()
+	-- 					local args_string = vim.fn.input("Arguments: ")
+	-- 					return vim.split(args_string, " ")
+	-- 				end,
+	-- 			},
+	-- 			{
+	-- 				type = "python",
+	-- 				request = "attach",
+	-- 				name = "🔗 Attach to process",
+	-- 				connect = function()
+	-- 					local host = vim.fn.input("Host [127.0.0.1]: ")
+	-- 					host = host ~= "" and host or "127.0.0.1"
+	-- 					local port = tonumber(vim.fn.input("Port [5678]: ")) or 5678
+	-- 					return { host = host, port = port }
+	-- 				end,
+	-- 			},
+	-- 		}
+	--
+	-- 		-------------------------------------------------------------------
+	-- 		-- Project configs (например .nvim/dap.json)
+	-- 		-------------------------------------------------------------------
+	-- 		if vim.fn.filereadable(".nvim/dap.json") == 1 then
+	-- 			local ok, json = pcall(vim.fn.readfile, ".nvim/dap.json")
+	-- 			if ok then
+	-- 				local ok2, conf = pcall(vim.fn.json_decode, table.concat(json, "\n"))
+	-- 				if ok2 and conf then
+	-- 					dap.configurations = vim.tbl_deep_extend("force", dap.configurations, conf)
+	-- 				end
+	-- 			end
+	-- 		end
+	-- 	end,
+	-- },
 }

@@ -1,4 +1,9 @@
-return {
+-- COMMENTED OUT: Replaced by blink.cmp (see blink-cmp.lua)
+-- Uncomment this file and comment out blink-cmp.lua to switch back to nvim-cmp
+
+return {}
+
+--[[ return {
 	"hrsh7th/nvim-cmp",
 	event = "InsertEnter",
 	dependencies = {
@@ -7,7 +12,6 @@ return {
 		"hrsh7th/cmp-nvim-lsp", -- source for LSP
 		"hrsh7th/cmp-nvim-lua", -- source for nvim lua API
 		"hrsh7th/cmp-cmdline", -- source for command line
-		"rcarriga/cmp-dap", -- source for debugger REPL - breaks command mode completion
 		{
 			"L3MON4D3/LuaSnip",
 			-- follow latest release.
@@ -148,13 +152,5 @@ return {
 			}),
 		})
 
-		-- DAP REPL setup - setup completion for debugger REPL and dap-view windows
-		cmp.setup.filetype({ "dap-repl", "dap-view", "dap-view-term" }, {
-			sources = {
-				{ name = "dap" },
-				{ name = "buffer" },
-				{ name = "path" },
-			},
-		})
 	end,
-}
+} ]]
