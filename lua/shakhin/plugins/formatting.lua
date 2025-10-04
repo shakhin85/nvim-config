@@ -22,10 +22,12 @@ return {
         json = { "prettier" },
         yaml = { "prettier" },
         markdown = { "prettier" },
+        mdx = { "prettier" },
         graphql = { "prettier" },
         liquid = { "prettier" },
         lua = { "stylua" },
         python = { "isort", "black" },
+        sql = { "sqlfluff" },
       },
       format_on_save = {
         lsp_fallback = true,
