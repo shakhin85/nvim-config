@@ -41,13 +41,12 @@ return {
 				timeout = 30000,
 			},
 
-			-- CLI configuration with Zellij multiplexer
+			-- CLI configuration with PowerShell terminal
 			cli = {
 				-- Terminal multiplexer configuration
 				mux = {
-					backend = "zellij", -- Using Zellij as terminal multiplexer
-					enabled = true,
-					-- Each AI tool opens in a separate Zellij pane, but prompts share history
+					enabled = false, -- Disable mux on Windows, use native terminal
+					-- Each AI tool opens in a separate terminal, but prompts share history
 					isolated = false,
 					-- Pane naming for easy identification
 					name_format = "sidekick-{name}",
@@ -311,7 +310,7 @@ return {
 			mode = { "n", "v" },
 		},
 
-		-- AI Provider Specific Terminals (Each in separate Zellij pane)
+		-- AI Provider Specific Terminals (Each in separate terminal pane)
 		{
 			"<leader>ac",
 			function()

@@ -44,8 +44,8 @@ return {
 
     -- Debug helpers
     vim.keymap.set("n", "<leader>rp", function() require("refactoring").debug.printf({below = false}) end, { desc = "Debug Print" })
-    vim.keymap.set("n", "<leader>rv", function() require("refactoring").debug.print_var({normal = true}) end, { desc = "Debug Print Var" })
-    vim.keymap.set("x", "<leader>rv", function() require("refactoring").debug.print_var({}) end, { desc = "Debug Print Var" })
+    vim.keymap.set("n", "<leader>rd", function() require("refactoring").debug.print_var({normal = true}) end, { desc = "Debug Print Var" }) -- Changed from rv to rd to avoid conflict with Extract Variable
+    vim.keymap.set("x", "<leader>rd", function() require("refactoring").debug.print_var({}) end, { desc = "Debug Print Var" })
     vim.keymap.set("n", "<leader>rc", function() require("refactoring").debug.cleanup({}) end, { desc = "Debug Cleanup" })
 
     -- Telescope refactoring menu

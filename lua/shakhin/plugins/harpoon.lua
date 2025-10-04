@@ -20,7 +20,7 @@ return {
 		local keymap = vim.keymap.set
 
 		-- Основные команды
-		keymap("n", "<leader>a", function()
+		keymap("n", "<leader>ja", function()
 			harpoon:list():add()
 		end, { desc = "Add file to harpoon" })
 		keymap("n", "<C-e>", function()
@@ -31,27 +31,27 @@ return {
 		-- keymap("n", "<C-h>", function()
 		-- 	harpoon:list():select(1)
 		-- end, { desc = "Harpoon file 1" })
-		keymap("n", "<C-t>", function()
+		keymap("n", "<leader>j2-removed", function()
 			harpoon:list():select(2)
 		end, { desc = "Harpoon file 2" })
-		keymap("n", "<C-n>", function()
+		keymap("n", "<leader>j3-removed", function()
 			harpoon:list():select(3)
 		end, { desc = "Harpoon file 3" })
-		keymap("n", "<C-s>", function()
+		keymap("n", "<leader>j4-removed", function()
 			harpoon:list():select(4)
 		end, { desc = "Harpoon file 4" })
 
 		-- Альтернативные кеймапы с leader
-		keymap("n", "<leader>h1", function()
+		keymap("n", "<leader>j1", function()
 			harpoon:list():select(1)
 		end, { desc = "Go to harpoon file 1" })
-		keymap("n", "<leader>h2", function()
+		keymap("n", "<leader>j2", function()
 			harpoon:list():select(2)
 		end, { desc = "Go to harpoon file 2" })
-		keymap("n", "<leader>h3", function()
+		keymap("n", "<leader>j3", function()
 			harpoon:list():select(3)
 		end, { desc = "Go to harpoon file 3" })
-		keymap("n", "<leader>h4", function()
+		keymap("n", "<leader>j4", function()
 			harpoon:list():select(4)
 		end, { desc = "Go to harpoon file 4" })
 
@@ -64,15 +64,15 @@ return {
 		end, { desc = "Next harpoon file" })
 
 		-- Дополнительные команды
-		keymap("n", "<leader>hc", function()
+		keymap("n", "<leader>jc", function()
 			harpoon:list():clear()
 		end, { desc = "Clear harpoon list" })
-		keymap("n", "<leader>hr", function()
+		keymap("n", "<leader>jr", function()
 			harpoon:list():remove()
 		end, { desc = "Remove current file from harpoon" })
 
 		-- Интеграция с Telescope (если нужно)
-		keymap("n", "<leader>ht", function()
+		keymap("n", "<leader>jt", function()
 			local conf = require("telescope.config").values
 			local function toggle_telescope(harpoon_files)
 				local file_paths = {}

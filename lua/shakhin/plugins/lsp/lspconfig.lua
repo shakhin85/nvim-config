@@ -61,7 +61,7 @@ return {
 				-- Python-specific keymaps
 				if vim.bo.filetype == "python" then
 					opts.desc = "Format Python file"
-					keymap.set("n", "<leader>f", function()
+					keymap.set("n", "<leader>lf", function()
 						vim.lsp.buf.format({ async = true })
 					end, opts)
 					opts.desc = "Organize imports"

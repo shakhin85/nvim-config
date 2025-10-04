@@ -7,6 +7,7 @@ return {
 		"mfussenegger/nvim-dap-python",
 		dependencies = { "mfussenegger/nvim-dap" },
 		ft = "python",
+		build = false,
 		config = function()
 			local function find_python_path()
 				local cwd = vim.fn.getcwd()

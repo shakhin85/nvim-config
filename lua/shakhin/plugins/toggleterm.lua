@@ -118,8 +118,8 @@ return {
         end
       end, { desc = "Open clean IPython" })
       
-      keymap("n", "<leader>tP", function()
-        -- Запуск обычного Python REPL (без IPython)
+      keymap("n", "<leader>tR", function()
+        -- Запуск обычного Python REPL (без IPython) - changed from tP to tR to avoid conflict
         local venv = vim.env.VIRTUAL_ENV
         if venv then
           vim.cmd("TermExec cmd='python' dir=getcwd()")
