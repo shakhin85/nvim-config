@@ -48,9 +48,8 @@ return {
           ".DS_Store",
           "Thumbs.db",
         },
-        -- Ограничение количества результатов
-        results_limit = 1000,
-        -- Более быстрый поиск
+        -- Убрали ограничение - fzf справится
+        -- Более быстрый поиск с уважением .gitignore
         vimgrep_arguments = {
           "rg",
           "--color=never",
@@ -60,13 +59,16 @@ return {
           "--column",
           "--smart-case",
           "--hidden",
-          "--no-ignore-vcs", -- Ускоряет поиск, но может показать больше файлов
+          -- Убрали --no-ignore-vcs для скорости
         },
-        -- Отключение превью для файлов больше определенного размера
+        -- Отключение превью для больших файлов
         preview = {
           filesize_limit = 0.1, -- MB
           timeout = 250, -- ms
         },
+        -- Критично для производительности
+        file_sorter = require("telescope.sorters").get_fzf_sorter,
+        generic_sorter = require("telescope.sorters").get_fzf_sorter,
         mappings = {
           i = {
             ["<C-k>"] = actions.move_selection_previous,
@@ -107,11 +109,19 @@ return {
       },
       pickers = {
         find_files = {
-          -- Используем fd вместо find для лучшей производительности
-          find_command = { "fd", "--type", "f", "--hidden", "--follow", "--exclude", ".git" },
-          -- Ограничиваем глубину поиска
+          -- Оптимизированный fd с ограничениями
+          find_command = {
+            "fd",
+            "--type", "f",
+            "--strip-cwd-prefix",
+            "--hidden",
+            "--no-ignore-vcs",  -- Уважаем .gitignore для скорости
+            "--exclude", ".git",
+            "--exclude", "node_modules",
+            "--threads", "8",  -- Параллельный поиск
+          },
           follow = true,
-          hidden = false,
+          hidden = true,
         },
         live_grep = {
           -- Дополнительные аргументы для rg
@@ -137,6 +147,10 @@ return {
           override_generic_sorter = true,
           override_file_sorter = true,
           case_mode = "smart_case",
+        },
+        -- Добавляем специально для больших проектов
+        ["ui-select"] = {
+          require("telescope.themes").get_dropdown {},
         },
       },
     })

@@ -27,244 +27,90 @@ return {
 	config = function()
 		local sidekick = require("sidekick")
 		sidekick.setup({
-			-- AI provider configuration
-			ai = {
-				-- Default provider: "claude", "gemini", "grok", or "copilot"
-				provider = "claude",
-				-- Model configuration per provider
-				models = {
-					claude = "claude-sonnet-4-5-20250929",
-					gemini = "gemini-2.0-flash-exp",
-					grok = "grok-2-latest",
-				},
-				-- Timeout for AI requests (in ms)
-				timeout = 30000,
-			},
-
-			-- CLI configuration with PowerShell terminal
-			cli = {
-				-- Terminal multiplexer configuration
-				mux = {
-					enabled = false, -- Disable mux on Windows, use native terminal
-					-- Each AI tool opens in a separate terminal, but prompts share history
-					isolated = false,
-					-- Pane naming for easy identification
-					name_format = "sidekick-{name}",
-				},
-				-- Window layout options: "float", "split", "vsplit", "right", "left", "top", "bottom"
-				layout = "float",
-				-- Persistent sessions - terminals stay open after closing
-				persistent = true,
-				-- Focus the CLI window when toggling
-				focus = true,
-				-- Window options for float layout
-				win_opts = {
-					relative = "editor",
-					width = 0.9,
-					height = 0.85,
-					border = "rounded",
-				},
-			},
-
 			-- Next Edit Suggestions (NES) - FULLY ENABLED
 			nes = {
 				enabled = true,
-				-- Auto-fetch suggestions on buffer changes
-				auto_fetch = true,
 				-- Debounce time in ms before fetching suggestions
-				debounce = 300,
-				-- Show suggestions in floating window
-				float = true,
-				-- Inline diff display: "word" or "character"
-				diff_mode = "word",
+				debounce = 100,
 				-- Trigger events for NES
-				trigger_events = { "TextChanged", "TextChangedI", "InsertLeave" },
+				trigger = {
+					events = { "InsertLeave", "TextChanged", "User SidekickNesDone" },
+				},
 				-- Clear suggestions on these events
-				clear_events = { "BufLeave", "InsertEnter" },
-				-- Show virtual text indicators
-				virtual_text = true,
-				-- Maximum number of suggestions to show
-				max_suggestions = 5,
-				-- Priority for extmarks
-				priority = 100,
-				-- Keymaps for NES
-				keys = {
-					accept = "<CR>",
-					reject = "<C-c>",
-					next = "]h",
-					prev = "[h",
-					accept_word = "<C-Right>",
-					accept_line = "<C-Down>",
+				clear = {
+					events = { "TextChangedI", "TextChanged", "BufWritePre", "InsertEnter" },
+					esc = true,
+				},
+				-- Inline diff display
+				diff = {
+					inline = "words",
+				},
+			},
+
+			-- CLI configuration
+			cli = {
+				-- Watch for changes in CLI output
+				watch = true,
+				-- Window configuration
+				win = {
+					-- Layout: "right", "left", "top", "bottom", or "float"
+					layout = "float",
+					-- Float window options
+					float = {
+						width = 0.9,
+						height = 0.85,
+					},
+					-- Split window options
+					split = {
+						width = 80,
+						height = 20,
+					},
+					-- Window keymaps
+					keys = {
+						hide_n = { "q", "hide", mode = "n" },
+						hide_t = { "<c-q>", "hide" },
+						win_p = { "<c-w>p", "blur" },
+						prompt = { "<c-p>", "prompt" },
+					},
+				},
+				-- Terminal multiplexer configuration (for session persistence)
+				mux = {
+					backend = "zellij", -- or "tmux"
+					enabled = false, -- Disable mux on Windows
+				},
+				-- Context functions for prompts
+				context = {},
+				-- Prompt library (custom prompts)
+				prompts = {
+					changes = "Can you review my changes?",
+					diagnostics = "Can you help me fix the diagnostics in {file}?\n{diagnostics}",
+					review = "Can you review {file} for any issues or improvements?",
+					explain = "Explain the following code in detail:\n{selection}",
+					document = "Generate comprehensive documentation for:\n{selection}",
+					optimize = "Suggest optimizations for:\n{selection}",
+					test = "Generate comprehensive unit tests for:\n{selection}",
+					refactor = "Refactor the following code:\n{selection}",
+					debug = "Help debug this code:\n{selection}",
+					simplify = "Simplify this code:\n{selection}",
 				},
 			},
 
 			-- Copilot Language Server configuration
 			copilot = {
 				status = {
-					enabled = true, -- Track Copilot status with didChangeStatus handler
+					enabled = true, -- Track Copilot status
 				},
 			},
 
-			-- Terminal configuration
-			terminal = {
+			-- Signs configuration
+			signs = {
 				enabled = true,
-				-- Terminal size (for float and split layouts)
-				size = {
-					width = 0.9,
-					height = 0.85,
-				},
-				-- Position: "center", "top", "bottom", "left", "right"
-				position = "center",
-				-- Border style: "none", "single", "double", "rounded", "solid", "shadow"
-				border = "rounded",
-				-- Shell to use (defaults to $SHELL)
-				shell = vim.o.shell,
-				-- Environment variables for terminal
-				env = {},
-				-- On_exit callback
-				on_exit = nil,
+				icon = " ",
 			},
 
-			-- Diff view configuration
-			diff = {
-				-- Show line numbers
-				line_numbers = true,
-				-- Syntax highlighting
-				syntax = true,
-				-- Context lines around changes
-				context = 5,
-				-- Diff algorithm: "myers", "minimal", "patience", "histogram"
-				algorithm = "histogram",
-				-- Ignore whitespace changes
-				ignore_whitespace = false,
-				-- Show deleted lines
-				show_deleted = true,
-			},
-
-			-- UI configuration
-			ui = {
-				-- Icons for different states
-				icons = {
-					suggestion = "󰛩",
-					accepted = "✓",
-					rejected = "✗",
-					pending = "⏳",
-					error = "",
-					warning = "",
-					info = "",
-				},
-				-- Sign column configuration
-				signs = {
-					add = "▎",
-					change = "▎",
-					delete = "▎",
-				},
-				-- Highlight groups
-				highlights = {
-					suggestion = "Comment",
-					accepted = "DiffAdd",
-					rejected = "DiffDelete",
-				},
-				-- Show notification messages
-				notifications = true,
-				-- Progress indicator
-				progress = {
-					enabled = true,
-					format = "󰄛 {percentage}% {message}",
-				},
-			},
-
-			-- Completion configuration
-			completion = {
-				enabled = true,
-				-- Auto-trigger completion
-				auto_trigger = true,
-				-- Debounce time for completion (ms)
-				debounce = 150,
-				-- Max items to show
-				max_items = 10,
-			},
-
-			-- Context configuration
-			context = {
-				-- Include buffer content in prompts
-				include_buffer = true,
-				-- Include visual selection
-				include_selection = true,
-				-- Include file path
-				include_filepath = true,
-				-- Include git diff
-				include_git_diff = false,
-				-- Include diagnostics
-				include_diagnostics = true,
-				-- Max context lines to include
-				max_lines = 1000,
-			},
-
-			-- Logging configuration
-			log = {
-				enabled = true,
-				level = "info", -- "trace", "debug", "info", "warn", "error"
-				-- Log file path
-				file = vim.fn.stdpath("log") .. "/sidekick.log",
-			},
-
-			-- Prompt library (custom prompts)
-			prompts = {
-				explain = {
-					prompt = "Explain the following code in detail, including its purpose, how it works, and any important details:\n\n{selection}",
-					description = "Explain selected code",
-				},
-				review = {
-					prompt = "Review the following code for potential issues, bugs, performance problems, and suggest improvements:\n\n{selection}",
-					description = "Review code quality",
-				},
-				document = {
-					prompt = "Generate comprehensive documentation for the following code:\n\n{selection}",
-					description = "Generate documentation",
-				},
-				optimize = {
-					prompt = "Suggest optimizations for the following code to improve performance, readability, or maintainability:\n\n{selection}",
-					description = "Optimize code",
-				},
-				test = {
-					prompt = "Generate comprehensive unit tests for the following code:\n\n{selection}",
-					description = "Generate tests",
-				},
-				refactor = {
-					prompt = "Refactor the following code to improve its structure, readability, and maintainability:\n\n{selection}",
-					description = "Refactor code",
-				},
-				debug = {
-					prompt = "Help debug the following code. Identify potential issues and suggest fixes:\n\n{selection}",
-					description = "Debug code",
-				},
-				simplify = {
-					prompt = "Simplify the following code while maintaining its functionality:\n\n{selection}",
-					description = "Simplify code",
-				},
-			},
-
-			-- Custom commands
-			commands = {
-				-- Enable custom commands
-				enabled = true,
-			},
-
-			-- Performance configuration
-			performance = {
-				-- Cache settings
-				cache = {
-					enabled = true,
-					-- Cache TTL in seconds
-					ttl = 3600,
-				},
-				-- Throttle requests
-				throttle = {
-					enabled = true,
-					-- Max requests per minute
-					max_requests = 60,
-				},
+			-- Jump configuration
+			jump = {
+				jumplist = true, -- add an entry to the jumplist
 			},
 		})
 		-- Sidekick automatically handles Copilot LSP status via its internal setup
@@ -310,13 +156,13 @@ return {
 			mode = { "n", "v" },
 		},
 
-		-- AI Provider Specific Terminals (Each in separate terminal pane)
+		-- AI Provider Specific Terminals
 		{
 			"<leader>ac",
 			function()
 				require("sidekick.cli").toggle({ name = "claude", focus = true })
 			end,
-			desc = "Sidekick Claude (Separate Terminal)",
+			desc = "Sidekick Claude",
 			mode = { "n", "v" },
 		},
 		{
@@ -324,7 +170,7 @@ return {
 			function()
 				require("sidekick.cli").toggle({ name = "gemini", focus = true })
 			end,
-			desc = "Sidekick Gemini (Separate Terminal)",
+			desc = "Sidekick Gemini",
 			mode = { "n", "v" },
 		},
 		{
@@ -332,7 +178,7 @@ return {
 			function()
 				require("sidekick.cli").toggle({ name = "grok", focus = true })
 			end,
-			desc = "Sidekick Grok (Separate Terminal)",
+			desc = "Sidekick Grok",
 			mode = { "n", "v" },
 		},
 		{
@@ -340,49 +186,17 @@ return {
 			function()
 				require("sidekick.cli").toggle({ name = "copilot", focus = true })
 			end,
-			desc = "Sidekick Copilot (Separate Terminal)",
+			desc = "Sidekick Copilot",
 			mode = { "n", "v" },
 		},
 
-		-- Prompt Selection and Custom Prompts
+		-- Prompt Selection
 		{
 			"<leader>ap",
 			function()
 				require("sidekick.cli").prompt()
 			end,
 			desc = "Sidekick Select Prompt",
-			mode = { "n", "v" },
-		},
-		{
-			"<leader>ae",
-			function()
-				require("sidekick.cli").prompt()
-			end,
-			desc = "Sidekick Explain Code",
-			mode = { "n", "v" },
-		},
-		{
-			"<leader>ar",
-			function()
-				require("sidekick.cli").prompt()
-			end,
-			desc = "Sidekick Review Code",
-			mode = { "n", "v" },
-		},
-		{
-			"<leader>ad",
-			function()
-				require("sidekick.cli").prompt()
-			end,
-			desc = "Sidekick Document Code",
-			mode = { "n", "v" },
-		},
-		{
-			"<leader>at",
-			function()
-				require("sidekick.cli").prompt()
-			end,
-			desc = "Sidekick Generate Tests",
 			mode = { "n", "v" },
 		},
 

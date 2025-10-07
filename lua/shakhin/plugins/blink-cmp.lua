@@ -10,7 +10,10 @@ return {
 	dependencies = {
 		"rafamadriz/friendly-snippets",
 		-- LuaSnip integration
-		"L3MON4D3/LuaSnip",
+		{
+			"L3MON4D3/LuaSnip",
+			build = "make install_jsregexp",
+		},
 	},
 
 	-- Extend opts when using lazy.nvim
@@ -40,16 +43,16 @@ return {
 			["<C-e>"] = { "hide", "fallback" },
 			["<CR>"] = { "accept", "fallback" },
 
-			-- Tab для навигации по сниппетам и автодополнению
-			["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
-			["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+			-- Используем Ctrl вместо Tab для избежания конфликта с навигацией буферов
+			["<C-n>"] = { "select_next", "snippet_forward", "fallback" },
+			["<C-p>"] = { "select_prev", "snippet_backward", "fallback" },
 		},
 
 		-- ==================== COMPLETION CONFIGURATION ====================
 		completion = {
 			-- Keyword matching mode
 			keyword = {
-				range = "prefix", -- fuzzy match before cursor
+				range = "full", -- Лучше fuzzy matching по всему слову
 			},
 
 			-- Trigger configuration
@@ -63,8 +66,8 @@ return {
 			-- Selection behavior
 			list = {
 				selection = {
-					preselect = true, -- Automatically select first item
-					auto_insert = false, -- Don't auto-insert (matches your config)
+					preselect = false, -- Не выбирать автоматически
+					auto_insert = false, -- Не вставлять автоматически
 				},
 				cycle = {
 					from_top = true,
@@ -97,7 +100,7 @@ return {
 			-- Documentation window
 			documentation = {
 				auto_show = true,
-				auto_show_delay_ms = 200,
+				auto_show_delay_ms = 500, -- Увеличена задержка для меньшей навязчивости
 				treesitter_highlighting = true,
 
 				window = {
@@ -159,7 +162,7 @@ return {
 					name = "Buffer",
 					module = "blink.cmp.sources.buffer",
 					score_offset = 500,
-					min_keyword_length = 3,
+					min_keyword_length = 2, -- Уменьшено для лучшего покрытия
 				},
 			},
 		},
