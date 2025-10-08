@@ -50,6 +50,10 @@ return {
         },
         -- Ограничение количества результатов
         results_limit = 1000,
+        -- Динамическое обновление при вводе (критично для больших репозиториев)
+        dynamic_preview_title = true,
+        -- Задержка перед началом поиска (мс) - уменьшает нагрузку при быстром наборе
+        debounce = 100,
         -- Более быстрый поиск
         vimgrep_arguments = {
           "rg",
@@ -73,6 +77,7 @@ return {
             ["<C-j>"] = actions.move_selection_next,
             ["<C-q>"] = actions.send_selected_to_qflist + custom_actions.open_trouble_qflist,
             ["<C-t>"] = trouble_telescope.open,
+            ["<C-p>"] = require("telescope.actions.layout").toggle_preview, -- Переключить preview
             ["<C-y>"] = function(prompt_bufnr)
               local selection = require("telescope.actions.state").get_selected_entry()
               if selection then
@@ -108,7 +113,18 @@ return {
       pickers = {
         find_files = {
           -- Используем fd вместо find для лучшей производительности
-          find_command = { "fd", "--type", "f", "--hidden", "--follow", "--exclude", ".git" },
+          find_command = {
+            "fd",
+            "--type", "f",
+            "--strip-cwd-prefix",
+            "--follow",
+            "--exclude", ".git",
+            "--exclude", "node_modules",
+            "--exclude", "__pycache__",
+            "--threads", "8", -- Параллельный поиск
+          },
+          -- Отключаем preview для быстрого поиска (можно включить по Ctrl+P)
+          previewer = false,
           -- Ограничиваем глубину поиска
           follow = true,
           hidden = false,
@@ -140,7 +156,7 @@ return {
         },
       },
     })
-    
+
     telescope.load_extension("fzf")
     
     -- Дополнительные кеймапы с опциями для больших директорий
