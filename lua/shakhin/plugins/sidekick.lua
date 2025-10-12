@@ -53,7 +53,7 @@ return {
 					name_format = "sidekick-{name}",
 				},
 				-- Window layout options: "float", "split", "vsplit", "right", "left", "top", "bottom"
-				layout = "float",
+				layout = "bottom",
 				-- Persistent sessions - terminals stay open after closing
 				persistent = true,
 				-- Focus the CLI window when toggling
@@ -64,6 +64,22 @@ return {
 					width = 0.9,
 					height = 0.85,
 					border = "rounded",
+				},
+				-- Prompt library (custom prompts) - MUST be inside cli section!
+				prompts = {
+					explain = "Explain the following code in detail, including its purpose, how it works, and any important details:\n\n{this}",
+					review = "Review the following code for potential issues, bugs, performance problems, and suggest improvements:\n\n{this}",
+					document = "Generate comprehensive documentation for the following code:\n\n{this}",
+					optimize = "Suggest optimizations for the following code to improve performance, readability, or maintainability:\n\n{this}",
+					test = "Generate comprehensive unit tests for the following code:\n\n{this}",
+					refactor = "Refactor the following code to improve its structure, readability, and maintainability:\n\n{this}",
+					debug = "Help debug the following code. Identify potential issues and suggest fixes:\n\n{this}",
+					simplify = "Simplify the following code while maintaining its functionality:\n\n{this}",
+					-- Additional useful prompts
+					security = "Analyze the following code for security vulnerabilities and suggest fixes:\n\n{this}",
+					complexity = "Analyze the complexity of this code and suggest ways to simplify:\n\n{this}",
+					naming = "Suggest better names for variables, functions, and classes in this code:\n\n{this}",
+					performance = "Analyze this code for performance bottlenecks and suggest optimizations:\n\n{this}",
 				},
 			},
 
@@ -210,42 +226,6 @@ return {
 				file = vim.fn.stdpath("log") .. "/sidekick.log",
 			},
 
-			-- Prompt library (custom prompts)
-			prompts = {
-				explain = {
-					prompt = "Explain the following code in detail, including its purpose, how it works, and any important details:\n\n{selection}",
-					description = "Explain selected code",
-				},
-				review = {
-					prompt = "Review the following code for potential issues, bugs, performance problems, and suggest improvements:\n\n{selection}",
-					description = "Review code quality",
-				},
-				document = {
-					prompt = "Generate comprehensive documentation for the following code:\n\n{selection}",
-					description = "Generate documentation",
-				},
-				optimize = {
-					prompt = "Suggest optimizations for the following code to improve performance, readability, or maintainability:\n\n{selection}",
-					description = "Optimize code",
-				},
-				test = {
-					prompt = "Generate comprehensive unit tests for the following code:\n\n{selection}",
-					description = "Generate tests",
-				},
-				refactor = {
-					prompt = "Refactor the following code to improve its structure, readability, and maintainability:\n\n{selection}",
-					description = "Refactor code",
-				},
-				debug = {
-					prompt = "Help debug the following code. Identify potential issues and suggest fixes:\n\n{selection}",
-					description = "Debug code",
-				},
-				simplify = {
-					prompt = "Simplify the following code while maintaining its functionality:\n\n{selection}",
-					description = "Simplify code",
-				},
-			},
-
 			-- Custom commands
 			commands = {
 				-- Enable custom commands
@@ -357,7 +337,7 @@ return {
 		{
 			"<leader>ae",
 			function()
-				require("sidekick.cli").prompt()
+				require("sidekick.cli").send({ prompt = "explain", submit = true })
 			end,
 			desc = "Sidekick Explain Code",
 			mode = { "n", "v" },
@@ -365,7 +345,7 @@ return {
 		{
 			"<leader>ar",
 			function()
-				require("sidekick.cli").prompt()
+				require("sidekick.cli").send({ prompt = "review", submit = true })
 			end,
 			desc = "Sidekick Review Code",
 			mode = { "n", "v" },
@@ -373,7 +353,7 @@ return {
 		{
 			"<leader>ad",
 			function()
-				require("sidekick.cli").prompt()
+				require("sidekick.cli").send({ prompt = "document", submit = true })
 			end,
 			desc = "Sidekick Document Code",
 			mode = { "n", "v" },
@@ -381,7 +361,7 @@ return {
 		{
 			"<leader>at",
 			function()
-				require("sidekick.cli").prompt()
+				require("sidekick.cli").send({ prompt = "test", submit = true })
 			end,
 			desc = "Sidekick Generate Tests",
 			mode = { "n", "v" },
