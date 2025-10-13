@@ -7,6 +7,7 @@ return {
 		"mfussenegger/nvim-dap-python",
 		dependencies = { "mfussenegger/nvim-dap" },
 		ft = "python",
+		build = false,
 		config = function()
 			local function find_python_path()
 				local cwd = vim.fn.getcwd()
@@ -57,6 +58,12 @@ return {
 
 			local python_path = find_python_path()
 			require("dap-python").setup(python_path)
+
+			-- Override default configurations to disable justMyCode
+			local dap = require("dap")
+			for _, config in ipairs(dap.configurations.python or {}) do
+				config.justMyCode = false
+			end
 		end,
 	},
 	{
@@ -196,6 +203,16 @@ return {
 		dependencies = { "mfussenegger/nvim-dap" },
 		---@module 'dap-view'
 		---@type dapview.Config
+		config = function(_, opts)
+			-- Отключаем winfixbuf для совместимости с DAP
+			vim.api.nvim_create_autocmd({ "BufWinEnter", "WinEnter" }, {
+				callback = function()
+					vim.wo.winfixbuf = false
+				end,
+			})
+
+			require("dap-view").setup(opts)
+		end,
 		opts = {
 			winbar = {
 				show = true,

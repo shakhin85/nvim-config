@@ -13,7 +13,7 @@ vim.opt.rtp:prepend(lazypath)
 
 
 require("lazy").setup({ { import = "shakhin.plugins" },
-   { import = "shakhin.plugins.lsp" } 
+   { import = "shakhin.plugins.lsp" }
 --{ import = "shakhin.plugins.lsp" }
 }, {
 	checker = {
@@ -22,6 +22,9 @@ require("lazy").setup({ { import = "shakhin.plugins" },
 	},
 	change_detection = {
 		notify = false,
+	},
+	rocks = {
+		enabled = false,
 	},
 })
 

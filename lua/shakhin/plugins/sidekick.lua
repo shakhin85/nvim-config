@@ -55,7 +55,7 @@ return {
 				-- Window layout options: "float", "split", "vsplit", "right", "left", "top", "bottom"
 				layout = "float",
 				-- Persistent sessions - terminals stay open after closing
-				persistent = true,
+				persistent = false,
 				-- Focus the CLI window when toggling
 				focus = true,
 				-- Window options for float layout

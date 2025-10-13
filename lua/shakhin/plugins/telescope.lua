@@ -6,6 +6,8 @@ return {
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
     "nvim-tree/nvim-web-devicons",
     "folke/todo-comments.nvim",
+    "nvim-telescope/telescope-smart-history.nvim",
+    "kkharji/sqlite.lua",
   },
   config = function()
     local telescope = require("telescope")
@@ -13,6 +15,48 @@ return {
     local transform_mod = require("telescope.actions.mt").transform_mod
     local trouble = require("trouble")
     local trouble_telescope = require("trouble.sources.telescope")
+    local entry_display = require("telescope.pickers.entry_display")
+
+    -- Функция для форматирования даты
+    local function format_date(timestamp)
+      return os.date("%Y-%m-%d %H:%M", timestamp)
+    end
+
+    -- Кастомный entry_maker для показа даты модификации
+    local function make_entry_with_mtime(opts)
+      opts = opts or {}
+      local make_entry = require("telescope.make_entry")
+      local base_entry = make_entry.gen_from_file(opts)
+
+      local displayer = entry_display.create({
+        separator = " ",
+        items = {
+          { width = 19 }, -- Дата
+          { remaining = true }, -- Имя файла
+        },
+      })
+
+      return function(line)
+        local entry = base_entry(line)
+        if not entry then
+          return nil
+        end
+
+        -- Получаем время модификации файла
+        local stat = vim.loop.fs_stat(entry.path)
+        local mtime = stat and stat.mtime.sec or 0
+        local date_str = format_date(mtime)
+
+        entry.display = function(ent)
+          return displayer({
+            { date_str, "TelescopeResultsNumber" },
+            entry.ordinal,
+          })
+        end
+
+        return entry
+      end
+    end
     
     -- or create your custom action
     local custom_actions = transform_mod({
@@ -47,10 +91,13 @@ return {
           "%.pyc",
           ".DS_Store",
           "Thumbs.db",
+          "%.lock",
+          "package%-lock%.json",
+          "yarn%.lock",
         },
-        -- Ограничение количества результатов
-        results_limit = 1000,
-        -- Более быстрый поиск
+        -- КРИТИЧНО: Уменьшил лимит для ускорения на больших директориях
+        results_limit = 300,
+        -- КРИТИЧНО: Respects .gitignore (убрал --no-ignore-vcs) + добавил --max-filesize
         vimgrep_arguments = {
           "rg",
           "--color=never",
@@ -60,13 +107,16 @@ return {
           "--column",
           "--smart-case",
           "--hidden",
-          "--no-ignore-vcs", -- Ускоряет поиск, но может показать больше файлов
+          "--max-filesize=1M", -- Игнорирует файлы > 1MB
         },
-        -- Отключение превью для файлов больше определенного размера
+        -- Превью быстрее
         preview = {
-          filesize_limit = 0.1, -- MB
-          timeout = 250, -- ms
+          filesize_limit = 0.5, -- MB
+          timeout = 200, -- ms
+          treesitter = false, -- Отключает treesitter в превью для скорости
         },
+        -- КРИТИЧНО: Debounce для live_grep (задержка перед началом поиска)
+        debounce = 200, -- ms (увеличено для больших директорий)
         mappings = {
           i = {
             ["<C-k>"] = actions.move_selection_previous,
@@ -104,22 +154,41 @@ return {
         cache_picker = {
           num_pickers = 10,
         },
+        -- История поиска
+        history = {
+          path = vim.fn.stdpath("data") .. "/telescope_history.sqlite3",
+          limit = 100,
+        },
       },
       pickers = {
         find_files = {
-          -- Используем fd вместо find для лучшей производительности
-          find_command = { "fd", "--type", "f", "--hidden", "--follow", "--exclude", ".git" },
-          -- Ограничиваем глубину поиска
+          -- Режим для системного поиска (включая бинарники)
+          find_command = {
+            "fd",
+            "--type", "f",
+            "--hidden",
+            "--follow",
+            "--exclude", ".git",
+            "--max-depth", "15",
+            -- Без ограничения по размеру для поиска бинарников
+          },
           follow = true,
           hidden = false,
+          previewer = false, -- Отключаем preview для бинарников
+          entry_maker = make_entry_with_mtime(), -- Показываем дату модификации
         },
         live_grep = {
-          -- Дополнительные аргументы для rg
+          -- КРИТИЧНО: Ограничения для ускорения на больших директориях
           additional_args = function()
-            return { "--hidden", "--follow" }
+            return {
+              "--hidden",
+              "--follow",
+              "--max-depth=10", -- Ограничение глубины
+            }
           end,
-          -- Ограничение по размеру файлов для grep
-          max_results = 1000,
+          max_results = 300, -- Уменьшил с 1000
+          -- Отключаем превью по умолчанию для скорости
+          previewer = false,
         },
         oldfiles = {
           -- Ограничиваем количество недавних файлов
@@ -127,8 +196,13 @@ return {
         },
         grep_string = {
           additional_args = function()
-            return { "--hidden", "--follow" }
+            return {
+              "--hidden",
+              "--follow",
+              "--max-depth=10",
+            }
           end,
+          max_results = 300,
         },
       },
       extensions = {
@@ -142,39 +216,90 @@ return {
     })
     
     telescope.load_extension("fzf")
+    telescope.load_extension("smart_history")
     
     -- Дополнительные кеймапы с опциями для больших директорий
     local keymap = vim.keymap
     
-    -- Стандартные кеймапы
-    keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
+    -- ОСНОВНЫЕ КЕЙМАПЫ (для системного поиска, включая бинарники)
+    keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Find files (любой размер, depth 15)" })
     keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
-    keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
-    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
-    -- keymap.set("n", "<leader>ft", "<cmd>TodoTelescope<cr>", { desc = "Find todos" }) -- Handled by todo-comments.lua
+    keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Live grep (depth 10)" })
+    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor" })
     keymap.set("n", "<leader>fk", "<cmd>Telescope keymaps<cr>", { desc = "Find keymaps" })
-    
-    -- Дополнительные оптимизированные кеймапы
+
+    -- REGEX поиск файлов по имени
+    keymap.set("n", "<leader>fR", function()
+      require('telescope.builtin').find_files({
+        find_command = {
+          "fd",
+          "--type", "f",
+          "--regex",  -- включает regex режим
+          "--hidden",
+          "--follow",
+          "--exclude", ".git",
+          "--max-depth", "15",
+        },
+        prompt_title = "Find Files (REGEX)",
+        entry_maker = make_entry_with_mtime(),
+        previewer = false,
+      })
+    end, { desc = "Find files by REGEX pattern" })
+
+    -- ПОЛНЫЕ КЕЙМАПЫ (для поиска бинарников, больших файлов, без ограничений)
     keymap.set("n", "<leader>fF", function()
       require('telescope.builtin').find_files({
-        no_ignore = false,
-        hidden = false,
-        file_ignore_patterns = { "node_modules/", ".git/", "*.log", "*.tmp" },
+        find_command = {
+          "fd",
+          "--type", "f",
+          "--hidden",
+          "--follow",
+          "--exclude", ".git",
+          -- БЕЗ ограничений по размеру и глубине!
+        },
+        previewer = false, -- Отключаем превью для скорости
+        entry_maker = make_entry_with_mtime(), -- Показываем дату модификации
       })
-    end, { desc = "Find files (fast mode)" })
-    
+    end, { desc = "Find ALL files (FULL: any size, any depth)" })
+
     keymap.set("n", "<leader>fG", function()
       require('telescope.builtin').live_grep({
-        additional_args = { "--max-depth", "3" }, -- Ограничиваем глубину
+        additional_args = function()
+          return {
+            "--hidden",
+            "--follow",
+            -- БЕЗ --max-depth
+            "--max-filesize=100M", -- Но файлы > 100MB все равно пропускаем
+          }
+        end,
+        max_results = 1000,
       })
-    end, { desc = "Live grep (limited depth)" })
-    
+    end, { desc = "Live grep (FULL: any depth, <100MB)" })
+
+    -- СПЕЦИАЛЬНЫЕ РЕЖИМЫ
     -- Поиск только в текущей директории (без рекурсии)
     keymap.set("n", "<leader>f.", function()
       require('telescope.builtin').find_files({
         cwd = vim.fn.expand('%:p:h'),
         search_dirs = { vim.fn.expand('%:p:h') },
+        entry_maker = make_entry_with_mtime(), -- Показываем дату модификации
       })
     end, { desc = "Find files in current directory" })
+
+    -- Поиск бинарников и больших файлов (без текстовых ограничений)
+    keymap.set("n", "<leader>fb", function()
+      require('telescope.builtin').find_files({
+        find_command = {
+          "fd",
+          "--type", "f",
+          "--hidden",
+          "--follow",
+          "--exclude", ".git",
+          "--size", "+100k", -- Только файлы > 100KB (вероятно бинарники)
+        },
+        previewer = false,
+        entry_maker = make_entry_with_mtime(), -- Показываем дату модификации
+      })
+    end, { desc = "Find binaries (>100KB)" })
   end,
 }
