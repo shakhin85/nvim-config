@@ -11,6 +11,17 @@ return {
     end
 
     conform.setup({
+      formatters = {
+        ruff_fix = {
+          args = {
+            "check",
+            "--fix",
+            "--select", "F401,I001,UP",  -- F401: unused imports, I001: isort, UP: pyupgrade
+            "--stdin-filename", "$FILENAME",
+            "-",
+          },
+        },
+      },
       formatters_by_ft = {
         javascript = { "prettier" },
         typescript = { "prettier" },
@@ -26,7 +37,7 @@ return {
         graphql = { "prettier" },
         liquid = { "prettier" },
         lua = { "stylua" },
-        python = { "isort", "black" },
+        python = { "ruff_fix", "ruff_organize_imports", "ruff_format" },
         sql = { "sqlfluff" },
       },
       format_on_save = {

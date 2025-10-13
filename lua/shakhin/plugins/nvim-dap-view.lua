@@ -58,140 +58,57 @@ return {
 
 			local python_path = find_python_path()
 			require("dap-python").setup(python_path)
-		end,
-	},
-	{
-		"rcarriga/cmp-dap",
-		dependencies = {
-			"hrsh7th/nvim-cmp",
-			"mfussenegger/nvim-dap",
-		},
-		config = function()
-			local cmp = require("cmp")
 
-			-- Автодополнение для всех DAP-view буферов и DAP REPL
-			cmp.setup.filetype({
-				"dap-view", -- Основные панели (Breakpoints, Exceptions, Sessions, Scopes, Threads, Watches)
-				"dap-view-term", -- Терминал
-				"dap-view-help", -- Помощь
-				"dap-repl", -- REPL (от nvim-dap)
-			}, {
-				sources = cmp.config.sources({
-					{ name = "dap" },
-				}, {
-					{ name = "buffer" },
-				}),
-				completion = {
-					autocomplete = {
-						cmp.TriggerEvent.TextChanged,
-					},
-					keyword_length = 0,
+			-- Enhanced Python DAP configurations
+			local dap = require("dap")
+			dap.configurations.python = {
+				{
+					type = "python",
+					request = "launch",
+					name = "🚀 Launch current file",
+					program = "${file}",
+					console = "integratedTerminal",
+					cwd = "${workspaceFolder}",
+					stopOnEntry = false,
+					justMyCode = true,
 				},
-				mapping = {
-					-- Навигация через Ctrl+J/K
-					["<C-j>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.select_next_item()
-						else
-							fallback()
-						end
-					end, { "i", "s" }),
-
-					["<C-k>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.select_prev_item()
-						else
-							fallback()
-						end
-					end, { "i", "s" }),
-
-					-- Tab для автодополнения после точки и вставки
-					["<Tab>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.confirm({ select = true })
-						else
-							-- Проверяем, есть ли точка перед курсором
-							local line = vim.api.nvim_get_current_line()
-							local col = vim.api.nvim_win_get_cursor(0)[2]
-							local before_cursor = string.sub(line, 1, col)
-
-							-- Если есть точка или символы идентификатора, запускаем автодополнение
-							if string.match(before_cursor, "[%w_]%.$") or string.match(before_cursor, "[%w_]+$") then
-								cmp.complete()
-							else
-								fallback()
-							end
-						end
-					end, { "i", "s" }),
-
-					-- Enter для подтверждения
-					["<CR>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.confirm({ select = true })
-						else
-							fallback()
-						end
-					end, { "i", "s" }),
-
-					-- Дополнительные удобные маппинги
-					["<C-Space>"] = cmp.mapping.complete(),
-					["<C-e>"] = cmp.mapping.abort(),
-					["<C-b>"] = cmp.mapping.scroll_docs(-4),
-					["<C-f>"] = cmp.mapping.scroll_docs(4),
-				},
-				formatting = {
-					format = function(entry, vim_item)
-						local icons = {
-							dap = "🐛",
-							buffer = "📝",
-						}
-						vim_item.kind = (icons[entry.source.name] or "•") .. " " .. vim_item.kind
-						vim_item.menu = ({
-							dap = "[Debug Variables]",
-							buffer = "[Buffer Text]",
-						})[entry.source.name]
-						return vim_item
+				{
+					type = "python",
+					request = "launch",
+					name = "⚙️  Launch with arguments",
+					program = "${file}",
+					console = "integratedTerminal",
+					cwd = "${workspaceFolder}",
+					args = function()
+						local args_string = vim.fn.input("Arguments: ")
+						return vim.split(args_string, " ")
 					end,
 				},
-				window = {
-					completion = cmp.config.window.bordered({
-						border = "rounded",
-					}),
-					documentation = cmp.config.window.bordered({
-						border = "rounded",
-					}),
+				{
+					type = "python",
+					request = "launch",
+					name = "🧪 Launch with pytest",
+					module = "pytest",
+					args = { "${file}", "-v", "-s" },
+					console = "integratedTerminal",
+					cwd = "${workspaceFolder}",
 				},
-				experimental = {
-					ghost_text = true,
+				{
+					type = "python",
+					request = "attach",
+					name = "🔗 Attach to process",
+					connect = function()
+						local host = vim.fn.input("Host [127.0.0.1]: ")
+						host = host ~= "" and host or "127.0.0.1"
+						local port = tonumber(vim.fn.input("Port [5678]: ")) or 5678
+						return { host = host, port = port }
+					end,
 				},
-			})
-
-			-- Автокоманды для улучшения поведения в DAP буферах
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = { "dap-view", "dap-view-term", "dap-view-help", "dap-repl" },
-				callback = function()
-					-- Включаем автодополнение при вводе точки
-					vim.api.nvim_create_autocmd("TextChangedI", {
-						buffer = 0,
-						callback = function()
-							local line = vim.api.nvim_get_current_line()
-							local col = vim.api.nvim_win_get_cursor(0)[2]
-							local before_cursor = string.sub(line, col, col)
-
-							-- Автоматически показывать автодополнение после точки
-							if before_cursor == "." then
-								vim.defer_fn(function()
-									if vim.api.nvim_get_mode().mode == "i" then
-										cmp.complete()
-									end
-								end, 100)
-							end
-						end,
-					})
-				end,
-			})
+			}
 		end,
 	},
+	-- NOTE: cmp-dap removed because we use blink.cmp instead of nvim-cmp
+	-- Buffer-local keymaps for dap-view are configured in the autocmd below
 	{
 		"igorlfs/nvim-dap-view",
 		dependencies = { "mfussenegger/nvim-dap" },
@@ -205,7 +122,7 @@ return {
 				base_sections = {
 					breakpoints = {
 						keymap = "B",
-						label = "🔴 Breakpoints [B]",
+						label = "🔴  Breakpoints [B]",
 						short_label = "🔴 [B]",
 						action = function()
 							require("dap-view.views").switch_to_view("breakpoints")
@@ -213,7 +130,7 @@ return {
 					},
 					scopes = {
 						keymap = "S",
-						label = "🔍 Variables [S]",
+						label = "🔍  Variables [S]",
 						short_label = "🔍 [S]",
 						action = function()
 							require("dap-view.views").switch_to_view("scopes")
@@ -222,15 +139,15 @@ return {
 					exceptions = {
 						keymap = "E",
 						label = "⚠️  Exceptions [E]",
-						short_label = "⚠️  [E]",
+						short_label = "⚠️ [E]",
 						action = function()
 							require("dap-view.views").switch_to_view("exceptions")
 						end,
 					},
 					watches = {
 						keymap = "W",
-						label = "👀 Watches [W]",
-						short_label = "👀 [W]",
+						label = "👁️  Watches [W]",
+						short_label = "👁️ [W]",
 						action = function()
 							require("dap-view.views").switch_to_view("watches")
 						end,
@@ -253,8 +170,8 @@ return {
 					},
 					console = {
 						keymap = "C",
-						label = "📺 Console [C]",
-						short_label = "📺 [C]",
+						label = "📟 Console [C]",
+						short_label = "📟 [C]",
 						action = function()
 							require("dap-view.views").switch_to_view("console")
 						end,
@@ -308,14 +225,14 @@ return {
 				enabled = "✅",
 				filter = "🔍",
 				negate = "❌",
-				pause = "⏸️ ",
-				play = "▶️ ",
+				pause = "⏸️  ",
+				play = "▶️  ",
 				run_last = "🔄",
-				step_back = "⬅️ ",
-				step_into = "⬇️ ",
-				step_out = "⬆️ ",
-				step_over = "➡️ ",
-				terminate = "⏹️ ",
+				step_back = "⬅️  ",
+				step_into = "⬇️  ",
+				step_out = "⬆️  ",
+				step_over = "➡️  ",
+				terminate = "⏹️  ",
 			},
 			help = {
 				border = "rounded",
@@ -405,7 +322,7 @@ return {
 				function()
 					require("dap-view.views").switch_to_view("watches")
 				end,
-				desc = "👀 Show Watches",
+				desc = "👁️  Show Watches",
 			},
 			{
 				"<leader>dr",
@@ -451,14 +368,14 @@ return {
 				function()
 					require("dap.ui.widgets").hover()
 				end,
-				desc = "❓ Hover Info",
+				desc = "ℹ️  Hover Info",
 			},
 			{
 				"<leader>dp",
 				function()
 					require("dap.ui.widgets").preview()
 				end,
-				desc = "👁️  Preview",
+				desc = "🔎 Preview",
 			},
 
 			-- Отладочная функция для проверки filetype
@@ -471,5 +388,118 @@ return {
 				desc = "🔍 Debug filetype",
 			},
 		},
+		config = function(_, opts)
+			require("dap-view").setup(opts)
+
+			-- Define DAP signs for breakpoints and current line
+			vim.fn.sign_define("DapBreakpoint", {
+				text = "🔴",
+				texthl = "DiagnosticError",
+				linehl = "",
+				numhl = "DiagnosticError",
+			})
+			vim.fn.sign_define("DapBreakpointCondition", {
+				text = "🟡",
+				texthl = "DiagnosticWarn",
+				linehl = "",
+				numhl = "DiagnosticWarn",
+			})
+			vim.fn.sign_define("DapBreakpointRejected", {
+				text = "⭕",
+				texthl = "DiagnosticInfo",
+				linehl = "",
+				numhl = "DiagnosticInfo",
+			})
+			vim.fn.sign_define("DapLogPoint", {
+				text = "💬",
+				texthl = "DiagnosticInfo",
+				linehl = "",
+				numhl = "DiagnosticInfo",
+			})
+			vim.fn.sign_define("DapStopped", {
+				text = "👉",
+				texthl = "DiagnosticHint",
+				linehl = "CursorLine",
+				numhl = "DiagnosticHint",
+			})
+
+			-- Buffer-local keymaps for dap-view windows to override global Tab/Shift-Tab
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = { "dap-view", "dap-view-term", "dap-view-help" },
+				callback = function(args)
+					local buf = args.buf
+
+					-- Normal mode: Tab to navigate within dap-view (sections/items)
+					vim.keymap.set("n", "<Tab>", function()
+						-- In dap-view, Tab should move to next item/section
+						vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("j", true, false, true), "n", false)
+					end, { buffer = buf, desc = "Next item in DAP view" })
+
+					vim.keymap.set("n", "<S-Tab>", function()
+						-- Shift-Tab should move to previous item/section
+						vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("k", true, false, true), "n", false)
+					end, { buffer = buf, desc = "Previous item in DAP view" })
+
+					-- Enter to expand/select items
+					vim.keymap.set("n", "<CR>", function()
+						vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", false)
+					end, { buffer = buf, desc = "Select/expand item in DAP view" })
+				end,
+			})
+
+			-- Special configuration for dap-repl with blink.cmp support
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "dap-repl",
+				callback = function(args)
+					local buf = args.buf
+					local opts_local = { buffer = buf, silent = true }
+
+					-- In Normal mode: Tab enters Insert mode at end of line
+					vim.keymap.set("n", "<Tab>", function()
+						vim.cmd("normal! A")
+					end, vim.tbl_extend("force", opts_local, { desc = "Enter insert mode for REPL input" }))
+
+					-- In Insert mode: Tab for completion with blink.cmp
+					vim.keymap.set("i", "<Tab>", function()
+						-- Check if blink.cmp menu is visible
+						local blink = require("blink.cmp")
+						if blink then
+							-- Just use regular Tab behavior - blink.cmp handles completion
+							vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", false)
+						else
+							-- Fallback to regular Tab
+							vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", false)
+						end
+					end, vim.tbl_extend("force", opts_local, { desc = "Trigger completion or insert Tab" }))
+
+					-- Shift-Tab: disable BufferLine navigation in Normal mode
+					vim.keymap.set("n", "<S-Tab>", function()
+						-- Do nothing - avoid buffer switching in REPL
+					end, vim.tbl_extend("force", opts_local, { desc = "Disabled in REPL" }))
+
+					-- History navigation
+					vim.keymap.set("i", "<C-p>", "<Up>", vim.tbl_extend("force", opts_local, { desc = "Previous command" }))
+					vim.keymap.set("i", "<C-n>", "<Down>", vim.tbl_extend("force", opts_local, { desc = "Next command" }))
+
+					-- Clear REPL
+					local function clear_repl()
+						local dap = require("dap")
+						if dap.session() then
+							vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+							vim.api.nvim_win_set_cursor(0, { 1, 0 })
+							print("🧹 REPL cleared")
+							if vim.fn.mode() == "i" then
+								vim.cmd("startinsert")
+							end
+						else
+							print("⚠️  No active debug session")
+						end
+					end
+
+					vim.keymap.set({ "n", "i" }, "<C-c>", clear_repl, vim.tbl_extend("force", opts_local, { desc = "Clear REPL" }))
+					vim.keymap.set({ "n", "i" }, "<leader>rc", clear_repl, vim.tbl_extend("force", opts_local, { desc = "Clear REPL" }))
+				end,
+			})
+		end,
 	},
 }

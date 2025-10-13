@@ -100,12 +100,19 @@ return {
 			},
 		})
 
-		-- Helper function to find Python interpreter in .venv
+		-- Helper function to find Python interpreter in .venv (cross-platform)
 		local function get_python_path()
 			local cwd = vim.fn.getcwd()
-			local venv_python = cwd .. "/.venv/bin/python"
+			local venv_python
 
-			-- Check if .venv/bin/python exists
+			-- Detect OS and use appropriate path
+			if vim.fn.has("win32") == 1 then
+				venv_python = cwd .. "/.venv/Scripts/python.exe"
+			else
+				venv_python = cwd .. "/.venv/bin/python"
+			end
+
+			-- Check if .venv python exists
 			if vim.fn.executable(venv_python) == 1 then
 				return venv_python
 			end
@@ -255,5 +262,19 @@ return {
 		vim.api.nvim_create_user_command("LuaLsRestart", function()
 			vim.cmd("LspRestart lua_ls")
 		end, { desc = "Restart Lua Language Server" })
+
+		-- Автоматический перезапуск Pyright при смене директории
+		vim.api.nvim_create_autocmd("DirChanged", {
+			callback = function()
+				-- Проверяем, запущен ли Pyright в текущем буфере
+				local clients = vim.lsp.get_clients({ name = "pyright" })
+				if #clients > 0 then
+					-- Перезапускаем Pyright для применения нового .venv
+					vim.cmd("LspRestart pyright")
+					vim.notify("Pyright restarted for new directory", vim.log.levels.INFO)
+				end
+			end,
+			desc = "Restart Pyright when changing directory to detect new .venv",
+		})
 	end,
 }

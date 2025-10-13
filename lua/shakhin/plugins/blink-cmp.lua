@@ -25,8 +25,15 @@ return {
 	opts = {
 		-- Control when blink.cmp is enabled
 		enabled = function()
-			-- Disable in prompt buffers (like telescope)
-			return vim.bo.buftype ~= "prompt"
+			-- Disable in prompt buffers (like telescope), but allow in dap-repl
+			if vim.bo.buftype == "prompt" then
+				return false
+			end
+			-- Enable for dap-repl specifically
+			if vim.bo.filetype == "dap-repl" then
+				return true
+			end
+			return true
 		end,
 
 		-- ==================== KEYMAP CONFIGURATION ====================
@@ -100,7 +107,7 @@ return {
 			-- Documentation window
 			documentation = {
 				auto_show = true,
-				auto_show_delay_ms = 500, -- Увеличена задержка для меньшей навязчивости
+				auto_show_delay_ms = 200, -- Увеличена задержка для меньшей навязчивости
 				treesitter_highlighting = true,
 
 				window = {
@@ -129,6 +136,8 @@ return {
 					name = "LSP",
 					module = "blink.cmp.sources.lsp",
 					score_offset = 1000, -- Highest priority (matches your nvim-cmp)
+					async = true, -- Асинхронная загрузка для лучшей производительности
+					timeout_ms = 500, -- Таймаут для медленных LSP серверов
 				},
 
 				snippets = {
@@ -251,5 +260,16 @@ return {
 
 		-- Load vscode-style snippets from friendly-snippets
 		require("luasnip.loaders.from_vscode").lazy_load()
+
+		-- Buffer-specific configuration for dap-repl
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = "dap-repl",
+			callback = function()
+				-- Enable blink.cmp for dap-repl with buffer as primary source
+				-- Note: blink.cmp doesn't have direct DAP variable completion like cmp-dap
+				-- but buffer completion will still show recently typed variable names
+				vim.b.blink_cmp_enabled = true
+			end,
+		})
 	end,
 }
