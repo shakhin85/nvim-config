@@ -1,3 +1,14 @@
+-- Sidekick.nvim - AI Assistant Integration
+-- CONVERSATION HISTORY:
+--   - Sessions persist while Neovim is running (both Windows and Unix)
+--   - On Unix/Linux/macOS: sessions can persist across Neovim restarts (if mux enabled)
+--   - On Windows: sessions are cleared when Neovim closes (mux unavailable)
+--
+-- WORKFLOW:
+--   1. Open AI tool: <leader>ac (Claude), <leader>am (Gemini), <leader>ag (Grok), <leader>ao (Copilot)
+--   2. Chat preserves history - hide/show window keeps same session
+--   3. Start fresh: <leader>ad (close session), then reopen with <leader>ac/am/ag/ao
+--
 return {
 	"folke/sidekick.nvim",
 	lazy = false, -- Load immediately to ensure keymaps work
@@ -74,9 +85,16 @@ return {
 					},
 				},
 				-- Terminal multiplexer configuration (for session persistence)
+				-- On Unix/Linux/macOS: enables persistent sessions across Neovim restarts
+				-- On Windows: sessions persist only while Neovim is running (mux unavailable)
 				mux = {
-					backend = "zellij", -- or "tmux"
-					enabled = false, -- Disable mux on Windows
+					backend = vim.env.ZELLIJ and "zellij" or "tmux", -- auto-detect or default to tmux
+					enabled = vim.fn.has("win32") == 0, -- Enable only on Unix-like systems
+					create = "terminal", -- "terminal" | "window" | "split"
+					split = {
+						vertical = true,
+						size = 0.5,
+					},
 				},
 				-- Context functions for prompts
 				context = {},
@@ -157,6 +175,8 @@ return {
 		},
 
 		-- AI Provider Specific Terminals
+		-- NOTE: History is preserved while Neovim is running
+		-- To start fresh: <leader>ad (close session), then reopen with <leader>ac/am/ag/ao
 		{
 			"<leader>ac",
 			function()
@@ -197,6 +217,24 @@ return {
 				require("sidekick.cli").prompt()
 			end,
 			desc = "Sidekick Select Prompt",
+			mode = { "n", "v" },
+		},
+
+		-- Session Management
+		{
+			"<leader>ad",
+			function()
+				require("sidekick.cli").close()
+			end,
+			desc = "Close/Detach AI Session (clears history)",
+			mode = { "n", "v" },
+		},
+		{
+			"<leader>as",
+			function()
+				require("sidekick.cli").select()
+			end,
+			desc = "Select AI Tool",
 			mode = { "n", "v" },
 		},
 

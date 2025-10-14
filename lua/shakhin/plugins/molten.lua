@@ -125,14 +125,15 @@ return {
   {
     "nvimtools/hydra.nvim",
     config = function()
-      -- Configure Hydra to use the new API (hint.float_opts instead of hint.border)
-      -- This prevents deprecation warnings
       local Hydra = require("hydra")
-      -- Set default config to avoid deprecation warnings from dependencies
+      -- Configure global defaults for all Hydra instances
       Hydra.setup({
         hint = {
+          position = "bottom",
           float_opts = {
             border = "rounded",
+            style = "minimal",
+            focusable = false,
           },
         },
       })
@@ -166,14 +167,7 @@ return {
       nn.setup({
         activate_hydra_keys = "<leader>mH", -- активировать hydra меню
         show_hydra_hint = true,
-        -- Use new Hydra API to avoid deprecation warnings
-        hydra_opts = {
-          hint = {
-            float_opts = {
-              border = "rounded",
-            },
-          },
-        },
+        -- Border configuration is handled globally in Hydra setup above
       })
     end,
   },
