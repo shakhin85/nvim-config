@@ -1,14 +1,11 @@
 return {
   "mg979/vim-visual-multi",
   event = "VeryLazy",
-  config = function()
-    -- Leader key for VM commands
-    vim.g.VM_leader = "\\"
-
-    -- Default mappings
+  init = function()
+    -- Must be set before plugin loads
     vim.g.VM_maps = {
-      ["Find Under"] = "<C-d>",
-      ["Find Subword Under"] = "<C-d>",
+      ["Find Under"] = "<leader>mn",
+      ["Find Subword Under"] = "<leader>mn",
       ["Add Cursor Down"] = "<C-Down>",
       ["Add Cursor Up"] = "<C-Up>",
     }

@@ -51,6 +51,7 @@ return {
 				"stylua", -- lua formatter
 				"black", -- python formatter
 				"isort", -- python import formatter
+				"sqlfluff", -- sql formatter and linter
 
 				-- Linters
 				"pylint", -- python linter
@@ -67,6 +68,12 @@ return {
 		vim.api.nvim_create_user_command("MasonInstallPython", function()
 			vim.cmd("MasonInstall pyright black isort pylint ruff debugpy mypy")
 		end, { desc = "Install Python development tools" })
+
+		vim.api.nvim_create_user_command("MasonInstallAll", function()
+			vim.cmd(
+				"MasonInstall pyright ts_ls html cssls tailwindcss svelte lua_ls graphql emmet_ls prismals eslint jsonls rust_analyzer prettier stylua black isort sqlfluff pylint eslint_d ruff debugpy mypy"
+			)
+		end, { desc = "Install all configured LSP servers and tools" })
 
 		vim.api.nvim_create_user_command("MasonUpdateAll", function()
 			vim.cmd("MasonUpdate")

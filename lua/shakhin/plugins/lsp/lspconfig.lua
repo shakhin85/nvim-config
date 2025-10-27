@@ -242,6 +242,11 @@ return {
 			},
 		})
 
+		-- SQL (T-SQL)
+		vim.lsp.config("sqls", {
+			filetypes = { "sql", "mysql" },
+		})
+
 		-- Note: Copilot LSP is managed by copilot.lua plugin, not lspconfig
 
 		-- Commands for Python development

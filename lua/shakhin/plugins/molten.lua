@@ -124,9 +124,25 @@ return {
   -- Hydra для интерактивного меню
   {
     "nvimtools/hydra.nvim",
+    priority = 1000, -- Load before NotebookNavigator to suppress warnings
     config = function()
       local Hydra = require("hydra")
+
+      -- Suppress deprecation warning from NotebookNavigator's internal Hydra usage
+      -- This needs to be set before any plugin uses Hydra
+      local original_notify = vim.notify
+      vim.notify = function(msg, level, opts)
+        if type(msg) == "string" and (
+          msg:match("hint%.border.*deprecated") or
+          msg:match("has been deprecated")
+        ) then
+          return -- Skip deprecation warnings
+        end
+        original_notify(msg, level, opts)
+      end
+
       -- Configure global defaults for all Hydra instances
+      -- Note: hint.border is deprecated, use hint.float_opts.border instead
       Hydra.setup({
         hint = {
           position = "bottom",
@@ -168,6 +184,14 @@ return {
         activate_hydra_keys = "<leader>mH", -- активировать hydra меню
         show_hydra_hint = true,
         -- Border configuration is handled globally in Hydra setup above
+        -- Using float_opts instead of deprecated border option
+        hydra_opts = {
+          hint = {
+            float_opts = {
+              border = "rounded",
+            },
+          },
+        },
       })
     end,
   },

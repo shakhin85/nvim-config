@@ -21,6 +21,11 @@ return {
             "-",
           },
         },
+        sqlfluff = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
+          args = { "format", "--dialect", "tsql", "$FILENAME" },
+          stdin = false,
+        },
       },
       formatters_by_ft = {
         javascript = { "prettier" },
@@ -43,7 +48,7 @@ return {
       format_on_save = {
         lsp_fallback = true,
         async = false,
-        timeout_ms = 3000,
+        timeout_ms = 10000,
       },
     })
 
@@ -51,7 +56,7 @@ return {
       conform.format({
         lsp_fallback = true,
         async = false,
-        timeout_ms = 1000,
+        timeout_ms = 10000,
       })
     end, { desc = "Format file or range (in visual mode)" })
 
