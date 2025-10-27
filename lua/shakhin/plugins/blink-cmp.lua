@@ -33,6 +33,10 @@ return {
 			if vim.bo.filetype == "dap-repl" then
 				return true
 			end
+			-- Disable for markdown files (use nvim-cmp for Obsidian)
+			if vim.bo.filetype == "markdown" then
+				return false
+			end
 			return true
 		end,
 
@@ -129,6 +133,11 @@ return {
 		sources = {
 			-- Default sources (matching your nvim-cmp priorities)
 			default = { "lsp", "path", "snippets", "buffer" },
+
+			-- Per-filetype sources
+			per_filetype = {
+				markdown = { "lsp", "path", "snippets", "buffer" },
+			},
 
 			-- Provider configurations
 			providers = {
