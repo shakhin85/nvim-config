@@ -107,7 +107,7 @@ return {
 			-- Documentation window
 			documentation = {
 				auto_show = true,
-				auto_show_delay_ms = 200, -- Увеличена задержка для меньшей навязчивости
+				auto_show_delay_ms = 100, -- Увеличена задержка для меньшей навязчивости
 				treesitter_highlighting = true,
 
 				window = {
