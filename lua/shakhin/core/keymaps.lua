@@ -56,6 +56,9 @@ keymap.set("n", "<leader>lg", "<cmd>LazyGit<CR>", { desc = "Open LazyGit" })
 keymap.set("n", "<Tab>", ":BufferLineCycleNext<CR>", { desc = "Next buffer" })
 keymap.set("n", "<S-Tab>", ":BufferLineCyclePrev<CR>", { desc = "Previous buffer" })
 
+-- Disable vim-visual-multi <C-n> in normal mode
+keymap.set("n", "<C-n>", "<Nop>", { desc = "Disabled (vim-visual-multi conflict)" })
+
 --keymaps navigation
 --
 -- In your telescope setup or keymaps section

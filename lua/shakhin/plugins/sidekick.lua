@@ -137,19 +137,17 @@ return {
 	-- Key mappings
 	keys = {
 		-- NES Navigation and Application
+		-- Changed from Tab/Shift-Tab to Alt+]/[ to avoid conflicts with buffer navigation
 		{
-			"<tab>",
+			"<A-]>",
 			function()
 				-- Jump to or apply next edit suggestion
-				if not require("sidekick").nes_jump_or_apply() then
-					return "<Tab>" -- fallback to normal tab
-				end
+				require("sidekick").nes_jump_or_apply()
 			end,
-			expr = true,
 			desc = "Goto/Apply Next Edit Suggestion",
 		},
 		{
-			"<S-Tab>",
+			"<A-[>",
 			function()
 				require("sidekick").nes_prev()
 			end,

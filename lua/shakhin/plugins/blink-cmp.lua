@@ -1,5 +1,6 @@
 return {
 	"saghen/blink.cmp",
+  enabled = false,
 
 	-- Lazy loading is not recommended as it can cause issues
 	lazy = false,
@@ -54,9 +55,11 @@ return {
 			["<C-e>"] = { "hide", "fallback" },
 			["<CR>"] = { "accept", "fallback" },
 
-			-- Используем Ctrl вместо Tab для избежания конфликта с навигацией буферов
-			["<C-n>"] = { "select_next", "snippet_forward", "fallback" },
-			["<C-p>"] = { "select_prev", "snippet_backward", "fallback" },
+			-- Snippet navigation moved to Alt+n/p to avoid all conflicts
+			-- Tab/Shift-Tab reserved for BufferLine buffer cycling
+			-- Alt-n/p won't conflict with vim completion or multi-cursor
+			["<A-n>"] = { "snippet_forward", "fallback" },
+			["<A-p>"] = { "snippet_backward", "fallback" },
 		},
 
 		-- ==================== COMPLETION CONFIGURATION ====================

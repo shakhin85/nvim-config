@@ -13,6 +13,7 @@ This is a Neovim configuration using Lazy.nvim as the plugin manager. The config
 - **Plugin Management**: `lua/shakhin/lazy.lua` configures Lazy.nvim and imports plugin modules
 - **Plugin Configurations**: `lua/shakhin/plugins/` contains individual plugin setups
 - **LSP Setup**: `lua/shakhin/plugins/lsp/` contains Language Server Protocol configurations
+- **Operating system of main interest**: `Windows` considering that all the plugins features should be applied for windows
 
 ## Key Components
 

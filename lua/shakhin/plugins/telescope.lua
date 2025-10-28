@@ -64,11 +64,11 @@ return {
           "--hidden",
           -- Убрали --no-ignore-vcs для скорости
         },
-        -- Отключение превью для больших файлов
-        preview = {
-          filesize_limit = 0.1, -- MB
-          timeout = 250, -- ms
-        },
+        -- -- Отключение превью для больших файлов
+        -- preview = {
+        --   filesize_limit = 0.1, -- MB
+        --   timeout = 250, -- ms
+        -- },
         -- Критично для производительности
         file_sorter = require("telescope.sorters").get_fzf_sorter,
         generic_sorter = require("telescope.sorters").get_fzf_sorter,
@@ -193,5 +193,14 @@ return {
         search_dirs = { vim.fn.expand('%:p:h') },
       })
     end, { desc = "Find files in current directory" })
+
+    -- Специальный поиск для markdown/заметок (без игнорирования)
+    keymap.set("n", "<leader>fn", function()
+      require('telescope.builtin').find_files({
+        cwd = vim.fn.expand("C:/Users/s.alnazarov/zettelkasten"),
+        find_command = { "fd", "--type", "f", "--extension", "md", "--strip-cwd-prefix" },
+        prompt_title = "Find Notes",
+      })
+    end, { desc = "Find notes in zettelkasten" })
   end,
 }

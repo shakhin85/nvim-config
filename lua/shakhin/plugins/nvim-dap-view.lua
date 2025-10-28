@@ -477,9 +477,9 @@ return {
 						-- Do nothing - avoid buffer switching in REPL
 					end, vim.tbl_extend("force", opts_local, { desc = "Disabled in REPL" }))
 
-					-- History navigation
-					vim.keymap.set("i", "<C-p>", "<Up>", vim.tbl_extend("force", opts_local, { desc = "Previous command" }))
-					vim.keymap.set("i", "<C-n>", "<Down>", vim.tbl_extend("force", opts_local, { desc = "Next command" }))
+					-- -- History navigation
+					-- vim.keymap.set("i", "<C-p>", "<Up>", vim.tbl_extend("force", opts_local, { desc = "Previous command" }))
+					-- vim.keymap.set("i", "<C-n>", "<Down>", vim.tbl_extend("force", opts_local, { desc = "Next command" }))
 
 					-- Clear REPL
 					local function clear_repl()
