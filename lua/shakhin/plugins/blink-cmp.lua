@@ -1,6 +1,6 @@
 return {
 	"saghen/blink.cmp",
-  enabled = false,
+  enabled = true,
 
 	-- Lazy loading is not recommended as it can cause issues
 	lazy = false,

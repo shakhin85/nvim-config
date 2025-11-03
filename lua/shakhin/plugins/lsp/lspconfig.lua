@@ -4,7 +4,6 @@ return {
 	dependencies = {
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
-		{ "folke/neodev.nvim", opts = {} },
 	},
 	config = function()
 		-- import lsp capabilities
@@ -107,7 +106,8 @@ return {
 
 			-- Detect OS and use appropriate path
 			if vim.fn.has("win32") == 1 then
-				venv_python = cwd .. "/.venv/Scripts/python.exe"
+				-- Windows: use backslashes and proper path
+				venv_python = cwd .. "\\.venv\\Scripts\\python.exe"
 			else
 				venv_python = cwd .. "/.venv/bin/python"
 			end
@@ -117,7 +117,13 @@ return {
 				return venv_python
 			end
 
-			-- Fallback to system python
+			-- Fallback: try to find python in PATH
+			local python_cmd = vim.fn.has("win32") == 1 and "python" or "python3"
+			if vim.fn.executable(python_cmd) == 1 then
+				return python_cmd
+			end
+
+			-- Last resort: return nil
 			return nil
 		end
 
@@ -128,8 +134,20 @@ return {
 			offset_encoding = "utf-16",
 		})
 
+		-- Helper function to get Mason binary path (Windows-compatible)
+		local function get_mason_bin(name)
+			local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
+			if vim.fn.has("win32") == 1 then
+				return mason_bin .. "\\" .. name .. ".cmd"
+			else
+				return mason_bin .. "/" .. name
+			end
+		end
+
 		-- Python configuration with .venv support
 		vim.lsp.config("pyright", {
+			cmd = { get_mason_bin("pyright-langserver"), "--stdio" },
+			filetypes = { "python" },
 			settings = {
 				python = {
 					analysis = {
@@ -153,45 +171,34 @@ return {
 			end,
 		})
 
-		-- Lua Language Server (исправленная конфигурация)
+		-- Lua Language Server (simple approach from blink.cmp docs)
 		vim.lsp.config("lua_ls", {
+			cmd = { get_mason_bin("lua-language-server") },
+			filetypes = { "lua" },
 			settings = {
 				Lua = {
-					-- make the language server recognize "vim" global
-					diagnostics = {
-						globals = { "vim" },
-					},
 					completion = {
 						callSnippet = "Replace",
 					},
+					diagnostics = {
+						globals = { "vim" },
+					},
+					runtime = {
+						version = "LuaJIT",
+					},
 					workspace = {
-						-- Используем только runtime файлы Neovim
-						library = {
-							vim.env.VIMRUNTIME,
-							"${3rd}/luv/library",
-						},
-						-- Отключаем проверку сторонних библиотек
 						checkThirdParty = false,
-						-- Игнорируем проблемные директории
-						ignoreDir = {
-							".git",
-							"node_modules",
-							".vscode",
-							".idea",
-							"target",
-							"build",
-							"dist",
+						library = {
+							"${3rd}/luv/library",
+							unpack(vim.api.nvim_get_runtime_file("", true)),
 						},
-						-- Ограничиваем сканирование только нужными директориями
-						maxPreload = 2000,
-						preloadFileSize = 1000,
 					},
 					telemetry = {
 						enable = false,
 					},
-					-- Отключаем ненужные предупреждения
 					hint = {
-						enable = false,
+						enable = true,
+						setType = true,
 					},
 				},
 			},
@@ -199,6 +206,8 @@ return {
 
 		-- TypeScript/JavaScript
 		vim.lsp.config("tsserver", {
+			cmd = { get_mason_bin("typescript-language-server"), "--stdio" },
+			filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
 			settings = {
 				typescript = {
 					inlayHints = {
@@ -215,21 +224,25 @@ return {
 
 		-- HTML
 		vim.lsp.config("html", {
+			cmd = { get_mason_bin("vscode-html-language-server"), "--stdio" },
 			filetypes = { "html", "htmldjango", "templ" },
 		})
 
 		-- CSS
 		vim.lsp.config("cssls", {
+			cmd = { get_mason_bin("vscode-css-language-server"), "--stdio" },
 			filetypes = { "css", "scss", "less" },
 		})
 
 		-- JSON
 		vim.lsp.config("jsonls", {
+			cmd = { get_mason_bin("vscode-json-language-server"), "--stdio" },
 			filetypes = { "json", "jsonc" },
 		})
 
 		-- Rust (if needed)
 		vim.lsp.config("rust_analyzer", {
+			cmd = { get_mason_bin("rust-analyzer") },
 			settings = {
 				["rust-analyzer"] = {
 					cargo = {
@@ -244,7 +257,20 @@ return {
 
 		-- SQL (T-SQL)
 		vim.lsp.config("sqls", {
+			cmd = { get_mason_bin("sqls") },
 			filetypes = { "sql", "mysql" },
+		})
+
+		-- Enable all configured LSP servers (CRITICAL: without this, servers won't start!)
+		vim.lsp.enable({
+			"pyright",
+			"lua_ls",
+			"tsserver",
+			"html",
+			"cssls",
+			"jsonls",
+			"rust_analyzer",
+			"sqls",
 		})
 
 		-- Note: Copilot LSP is managed by copilot.lua plugin, not lspconfig

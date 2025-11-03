@@ -38,7 +38,8 @@ local function get_uv_python()
 	local venv_python
 
 	if vim.fn.has("win32") == 1 then
-		venv_python = cwd .. "/.venv/Scripts/python.exe"
+		-- Windows: use backslashes and proper path
+		venv_python = cwd .. "\\.venv\\Scripts\\python.exe"
 	else
 		venv_python = cwd .. "/.venv/bin/python"
 	end
