@@ -11,11 +11,11 @@
 --
 return {
 	"folke/sidekick.nvim",
-	lazy = false, -- Load immediately to ensure keymaps work
+	event = "VeryLazy", -- Lazy load for better startup performance
 	dependencies = {
 		{
 			"zbirenbaum/copilot.lua", -- Required for Copilot integration
-			lazy = false, -- Load immediately with sidekick
+			event = "VeryLazy", -- Lazy load with sidekick
 			config = function()
 				-- This ensures copilot.lua config runs before sidekick
 				require("copilot").setup({

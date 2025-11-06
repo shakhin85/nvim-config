@@ -5,7 +5,10 @@ return {
   config = function()
     -- Устанавливаем leader (на случай если не определен)
     vim.g.mapleader = " "
-    
+
+    -- Cross-platform detection
+    local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
+
     require("toggleterm").setup({
       -- Размер терминала
       size = function(term)
@@ -42,8 +45,8 @@ return {
       -- Закрывать терминал при выходе из процесса
       close_on_exit = true,
       
-      -- Оболочка по умолчанию
-      shell = vim.o.shell,
+      -- Оболочка по умолчанию (PowerShell 7 Core)
+      shell = vim.o.shell, -- Использует shell из Neovim настроек
       
       -- Автопрокрутка
       auto_scroll = true,
@@ -69,13 +72,40 @@ return {
 
     -- Добавляем небольшую задержку чтобы which-key успел загрузиться
     vim.defer_fn(function()
+      -- Helper functions for cross-platform venv activation
+      local function get_venv_path()
+        return vim.fn.getcwd() .. (is_windows and "\\.venv" or "/.venv")
+      end
+
+      local function get_venv_activate_cmd()
+        if is_windows then
+          return ".venv\\\\Scripts\\\\Activate.ps1; "
+        else
+          return "source .venv/bin/activate && "
+        end
+      end
+
+      local function run_with_venv(cmd)
+        local venv = vim.env.VIRTUAL_ENV
+        if venv then
+          return cmd
+        else
+          local venv_path = get_venv_path()
+          if vim.fn.isdirectory(venv_path) == 1 then
+            return get_venv_activate_cmd() .. cmd
+          else
+            return cmd
+          end
+        end
+      end
+
       -- Кеймапы для toggleterm
       local keymap = vim.keymap.set
       local opts = { noremap = true, silent = true }
       
       -- Основные кеймапы
       keymap("n", "<leader>tt", ":ToggleTerm<CR>", { desc = "Toggle terminal" })
-      keymap("n", "<leader>tf", ":ToggleTerm direction=float<CR>", { desc = "Toggle floating terminal" })
+      keymap("n", "<leader>t.", ":ToggleTerm direction=float<CR>", { desc = "Toggle floating terminal" }) -- Changed from <leader>tf to avoid conflict with tab open
       keymap("n", "<leader>th", ":ToggleTerm direction=horizontal<CR>", { desc = "Toggle horizontal terminal" })
       keymap("n", "<leader>tv", ":ToggleTerm direction=vertical size=80<CR>", { desc = "Toggle vertical terminal" })
       
@@ -88,49 +118,25 @@ return {
       keymap("n", "<leader>tp", ":TermExec cmd='python %' dir=getcwd()<CR>", { desc = "Run Python file" })
       
       keymap("n", "<leader>ti", function()
-        -- Запуск файла в IPython с проверкой venv
-        local venv = vim.env.VIRTUAL_ENV
-        if venv then
-          vim.cmd("TermExec cmd='ipython -i " .. vim.fn.expand('%') .. "' dir=getcwd()")
-        else
-          local venv_path = vim.fn.getcwd() .. "/.venv"
-          if vim.fn.isdirectory(venv_path) == 1 then
-            vim.cmd("TermExec cmd='source .venv/bin/activate && ipython -i " .. vim.fn.expand('%') .. "' dir=getcwd()")
-          else
-            vim.cmd("TermExec cmd='ipython -i " .. vim.fn.expand('%') .. "' dir=getcwd()")
-          end
-        end
+        -- Запуск файла в IPython с проверкой venv (cross-platform)
+        local cmd = run_with_venv("ipython -i " .. vim.fn.expand('%'))
+        vim.cmd("TermExec cmd='" .. cmd .. "' dir=getcwd()")
       end, { desc = "Run file in IPython" })
       
       keymap("n", "<leader>tI", function()
-        -- Запуск чистого IPython с проверкой venv
-        local venv = vim.env.VIRTUAL_ENV
-        if venv then
-          vim.cmd("TermExec cmd='ipython' dir=getcwd()")
-        else
-          local venv_path = vim.fn.getcwd() .. "/.venv"
-          if vim.fn.isdirectory(venv_path) == 1 then
-            vim.cmd("TermExec cmd='source .venv/bin/activate && ipython' dir=getcwd()")
-          else
-            vim.notify("No .venv found. Using system IPython.", vim.log.levels.INFO)
-            vim.cmd("TermExec cmd='ipython' dir=getcwd()")
-          end
+        -- Запуск чистого IPython с проверкой venv (cross-platform)
+        local venv_path = get_venv_path()
+        if vim.env.VIRTUAL_ENV == nil and vim.fn.isdirectory(venv_path) == 0 then
+          vim.notify("No .venv found. Using system IPython.", vim.log.levels.INFO)
         end
+        local cmd = run_with_venv("ipython")
+        vim.cmd("TermExec cmd='" .. cmd .. "' dir=getcwd()")
       end, { desc = "Open clean IPython" })
       
       keymap("n", "<leader>tR", function()
-        -- Запуск обычного Python REPL (без IPython) - changed from tP to tR to avoid conflict
-        local venv = vim.env.VIRTUAL_ENV
-        if venv then
-          vim.cmd("TermExec cmd='python' dir=getcwd()")
-        else
-          local venv_path = vim.fn.getcwd() .. "/.venv"
-          if vim.fn.isdirectory(venv_path) == 1 then
-            vim.cmd("TermExec cmd='source .venv/bin/activate && python' dir=getcwd()")
-          else
-            vim.cmd("TermExec cmd='python' dir=getcwd()")
-          end
-        end
+        -- Запуск обычного Python REPL (без IPython) - cross-platform
+        local cmd = run_with_venv("python")
+        vim.cmd("TermExec cmd='" .. cmd .. "' dir=getcwd()")
       end, { desc = "Open Python REPL" })
       
       -- Кеймап для очистки прямо в terminal mode

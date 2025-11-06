@@ -1,6 +1,14 @@
 return {
   "nvim-telescope/telescope.nvim",
   branch = "0.1.x",
+  cmd = "Telescope",
+  keys = {
+    { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Fuzzy find files in cwd" },
+    { "<leader>fr", "<cmd>Telescope oldfiles<cr>", desc = "Fuzzy find recent files" },
+    { "<leader>fg", "<cmd>Telescope live_grep<cr>", desc = "Find string in cwd" },
+    { "<leader>fc", "<cmd>Telescope grep_string<cr>", desc = "Find string under cursor in cwd" },
+    { "<leader>fk", "<cmd>Telescope keymaps<cr>", desc = "Find keymaps" },
+  },
   dependencies = {
     "nvim-lua/plenary.nvim",
     {"nvim-telescope/telescope-fzf-native.nvim",
@@ -159,19 +167,9 @@ return {
     })
     
     telescope.load_extension("fzf")
-    
-    -- Дополнительные кеймапы с опциями для больших директорий
-    local keymap = vim.keymap
-    
-    -- Стандартные кеймапы
-    keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
-    keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
-    keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
-    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
-    -- keymap.set("n", "<leader>ft", "<cmd>TodoTelescope<cr>", { desc = "Find todos" }) -- Handled by todo-comments.lua
-    keymap.set("n", "<leader>fk", "<cmd>Telescope keymaps<cr>", { desc = "Find keymaps" })
-    
+
     -- Дополнительные оптимизированные кеймапы
+    local keymap = vim.keymap
     keymap.set("n", "<leader>fF", function()
       require('telescope.builtin').find_files({
         no_ignore = false,

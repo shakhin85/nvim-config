@@ -3,6 +3,7 @@ return {
   {
     "benlubas/molten-nvim",
     version = "^1.0.0", -- используем последнюю стабильную версию
+    ft = { "python", "jupyter" }, -- Lazy load only for Python and Jupyter files
     dependencies = {
       -- image.nvim only works on Unix-like systems (Linux/macOS)
       vim.fn.has("win32") == 0 and "3rd/image.nvim" or nil,
@@ -44,11 +45,11 @@ return {
       -- Выполнение кода
       keymap.set("n", "<leader>me", ":MoltenEvaluateLine<CR>", { desc = "Evaluate line", silent = true })
       keymap.set("v", "<leader>me", ":<C-u>MoltenEvaluateVisual<CR>gv", { desc = "Evaluate visual selection", silent = true })
-      keymap.set("n", "<leader>mr", ":MoltenReevaluateCell<CR>", { desc = "Re-evaluate cell", silent = true })
+      keymap.set("n", "<leader>mR", ":MoltenReevaluateCell<CR>", { desc = "Re-evaluate Molten cell", silent = true }) -- Changed from <leader>mr to avoid conflict with ruff format
 
-      -- Навигация по ячейкам
-      keymap.set("n", "]c", ":MoltenNext<CR>", { desc = "Next Molten cell", silent = true })
-      keymap.set("n", "[c", ":MoltenPrev<CR>", { desc = "Previous Molten cell", silent = true })
+      -- Навигация по ячейкам (changed from ]c/[c to avoid conflict with gitsigns)
+      keymap.set("n", "]m", ":MoltenNext<CR>", { desc = "Next Molten cell", silent = true })
+      keymap.set("n", "[m", ":MoltenPrev<CR>", { desc = "Previous Molten cell", silent = true })
 
       -- Управление выводом
       keymap.set("n", "<leader>mo", ":MoltenShowOutput<CR>", { desc = "Show output", silent = true })
@@ -112,6 +113,7 @@ return {
   -- Jupytext для работы с .ipynb файлами
   {
     "GCBallesteros/jupytext.nvim",
+    ft = { "python", "jupyter", "markdown" },
     config = function()
       require("jupytext").setup({
         style = "markdown", -- или "light", "percent", "hydrogen"
@@ -124,6 +126,7 @@ return {
   -- Hydra для интерактивного меню
   {
     "nvimtools/hydra.nvim",
+    ft = { "python", "jupyter" },
     priority = 1000, -- Load before NotebookNavigator to suppress warnings
     config = function()
       local Hydra = require("hydra")
@@ -166,6 +169,7 @@ return {
   -- Опционально: NotebookNavigator для лучшей навигации
   {
     "GCBallesteros/NotebookNavigator.nvim",
+    ft = { "python", "jupyter" },
     keys = {
       { "]h", function() require("notebook-navigator").move_cell "d" end, desc = "Next cell" },
       { "[h", function() require("notebook-navigator").move_cell "u" end, desc = "Previous cell" },
@@ -177,7 +181,6 @@ return {
       "GCBallesteros/jupytext.nvim",
       "nvimtools/hydra.nvim",
     },
-    event = "VeryLazy",
     config = function()
       local nn = require("notebook-navigator")
       nn.setup({

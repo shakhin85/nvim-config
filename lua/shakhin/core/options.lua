@@ -40,6 +40,19 @@ opt.splitbelow = true -- split horizontal window to the bottom
 -- turn off swapfile
 opt.swapfile = false
 
+-- Cross-platform shell configuration
+if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+  -- Windows: Use PowerShell 7 Core
+  opt.shell = "pwsh"
+  opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+  opt.shellquote = ""
+  opt.shellxquote = ""
+else
+  -- Linux/macOS: Use bash or default shell
+  opt.shell = vim.env.SHELL or "/bin/bash"
+  opt.shellcmdflag = "-c"
+end
+
 
 -- highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {

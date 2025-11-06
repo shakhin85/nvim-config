@@ -57,7 +57,11 @@ return {
 
       -- Синтаксис ссылок
       media_previewer = "telescope-media-files",
-      follow_url_fallback = nil,
+
+      -- Windows-specific: use 'start' command to open URLs/files
+      follow_url_fallback = vim.fn.has("win32") == 1 and function(url)
+        vim.fn.jobstart({ "cmd.exe", "/c", "start", '""', url }, { detach = true })
+      end or nil,
     })
 
     -- Keymaps
@@ -75,9 +79,9 @@ return {
 
     -- Работа с тегами и ссылками
     keymap.set("n", "<leader>zt", "<cmd>Telekasten show_tags<cr>", { desc = "Show tags" })
-    keymap.set("n", "<leader>z#", "<cmd>Telekasten show_tags<cr>", { desc = "Show tags" })
+    -- Removed duplicate <leader>z# (same as <leader>zt)
     keymap.set("n", "<leader>zT", "<cmd>Telekasten goto_thisweek<cr>", { desc = "Go to this week" })
-    keymap.set("n", "<leader>zw", "<cmd>Telekasten goto_thisweek<cr>", { desc = "Go to this week" })
+    -- Removed duplicate <leader>zw (same as <leader>zT)
     keymap.set("n", "<leader>zW", "<cmd>Telekasten find_weekly_notes<cr>", { desc = "Find weekly notes" })
 
     -- Вставка ссылок

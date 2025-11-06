@@ -87,6 +87,12 @@ return {
 		-- Force UTF-16 offset encoding for all LSP servers to avoid conflicts
 		capabilities.offsetEncoding = { "utf-16" }
 
+		-- Add folding capabilities for nvim-ufo
+		capabilities.textDocument.foldingRange = {
+			dynamicRegistration = false,
+			lineFoldingOnly = true,
+		}
+
 		-- Diagnostic signs configuration
 		vim.diagnostic.config({
 			signs = {
@@ -144,10 +150,31 @@ return {
 			end
 		end
 
+		-- Helper function to find tool in .venv first, then fall back to Mason
+		local function get_tool_cmd(name)
+			local cwd = vim.fn.getcwd()
+			local venv_tool
+
+			-- Check .venv first
+			if vim.fn.has("win32") == 1 then
+				venv_tool = cwd .. "\\.venv\\Scripts\\" .. name .. ".exe"
+			else
+				venv_tool = cwd .. "/.venv/bin/" .. name
+			end
+
+			if vim.fn.executable(venv_tool) == 1 then
+				return venv_tool
+			end
+
+			-- Fall back to Mason
+			return get_mason_bin(name)
+		end
+
 		-- Python configuration with .venv support
 		vim.lsp.config("pyright", {
 			cmd = { get_mason_bin("pyright-langserver"), "--stdio" },
 			filetypes = { "python" },
+			single_file_support = false,
 			settings = {
 				python = {
 					analysis = {
@@ -168,6 +195,22 @@ return {
 					client.config.settings.python.pythonPath = python_path
 					client:notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 				end
+			end,
+		})
+
+		-- Ruff LSP server (linting and formatting via LSP)
+		vim.lsp.config("ruff", {
+			cmd = { get_tool_cmd("ruff"), "server" },
+			filetypes = { "python" },
+			single_file_support = false,
+			settings = {
+				-- Ruff LSP settings
+				organizeImports = true,
+				fixAll = true,
+			},
+			on_attach = function(client, bufnr)
+				-- Disable hover in favor of Pyright
+				client.server_capabilities.hoverProvider = false
 			end,
 		})
 
@@ -261,9 +304,52 @@ return {
 			filetypes = { "sql", "mysql" },
 		})
 
+		-- Marksman (Markdown LSP - popular choice)
+		vim.lsp.config("marksman", {
+			cmd = { get_mason_bin("marksman"), "server" },
+			filetypes = { "markdown", "markdown.mdx" },
+			settings = {
+				-- Marksman doesn't have many settings, it works well out of the box
+			},
+		})
+
+		-- LTeX (Grammar and spell checker for Markdown and text)
+		vim.lsp.config("ltex", {
+			cmd = { get_mason_bin("ltex-ls") },
+			filetypes = { "markdown", "text", "tex", "gitcommit" },
+			settings = {
+				ltex = {
+					-- Set your language(s) - English by default, add "ru-RU" for Russian
+					language = { "en-US", "ru-RU" },
+					-- You can add multiple languages: language = "auto" or { "en-US", "ru-RU" }
+					-- Additional languages you want to check
+					additionalRules = {
+						enablePickyRules = true,
+						motherTongue = "en-US",
+					},
+					-- Dictionary for custom words (to avoid false positives)
+					dictionary = {
+						["en-US"] = {},
+						-- ["ru-RU"] = {},
+					},
+					-- Disable rules if needed
+					disabledRules = {
+						["en-US"] = {},
+						-- ["ru-RU"] = {},
+					},
+					-- Check only specific elements in Markdown
+					markdown = {
+						-- Don't check code blocks
+						ignoreCodeBlocks = true,
+					},
+				},
+			},
+		})
+
 		-- Enable all configured LSP servers (CRITICAL: without this, servers won't start!)
 		vim.lsp.enable({
 			"pyright",
+			"ruff",
 			"lua_ls",
 			"tsserver",
 			"html",
@@ -271,6 +357,8 @@ return {
 			"jsonls",
 			"rust_analyzer",
 			"sqls",
+			"marksman",
+			"ltex",
 		})
 
 		-- Note: Copilot LSP is managed by copilot.lua plugin, not lspconfig
@@ -288,6 +376,26 @@ return {
 		vim.api.nvim_create_user_command("PyrightRestart", function()
 			vim.cmd("LspRestart pyright")
 		end, { desc = "Restart Pyright LSP" })
+
+		vim.api.nvim_create_user_command("RuffRestart", function()
+			vim.cmd("LspRestart ruff")
+		end, { desc = "Restart Ruff LSP" })
+
+		-- Show Python tool paths
+		vim.api.nvim_create_user_command("PythonToolInfo", function()
+			print("Python Development Tools:")
+			print("  Python: " .. (get_python_path() or "system python"))
+			print("  Pyright: " .. get_mason_bin("pyright-langserver"))
+			print("  Ruff: " .. get_tool_cmd("ruff"))
+
+			local venv_ruff = vim.fn.getcwd()
+				.. (vim.fn.has("win32") == 1 and "\\.venv\\Scripts\\ruff.exe" or "/.venv/bin/ruff")
+			if vim.fn.executable(venv_ruff) == 1 then
+				print("  → Using .venv ruff")
+			else
+				print("  → Using Mason ruff")
+			end
+		end, { desc = "Show Python development tool paths" })
 
 		-- Добавлена команда для перезапуска lua_ls
 		vim.api.nvim_create_user_command("LuaLsRestart", function()

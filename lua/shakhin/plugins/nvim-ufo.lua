@@ -18,21 +18,9 @@ return {
     vim.keymap.set("n", "zm", require("ufo").closeFoldsWith, { desc = "Fold more" })
     vim.keymap.set("n", "zp", require("ufo").peekFoldedLinesUnderCursor, { desc = "Peek fold" })
 
-    -- Option 2: nvim lsp as LSP client
-    -- Tell the server the capability of foldingRange,
-    -- Neovim hasn't added foldingRange to default capabilities, users must add it manually
-    local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities.textDocument.foldingRange = {
-      dynamicRegistration = false,
-      lineFoldingOnly = true,
-    }
-
-    local language_servers = require("lspconfig").util.available_servers()
-    for _, ls in ipairs(language_servers) do
-      require("lspconfig")[ls].setup({
-        capabilities = capabilities,
-      })
-    end
+    -- NOTE: LSP folding capabilities are set in lspconfig.lua
+    -- This avoids overriding your carefully configured LSP setups
+    -- The capabilities should be added in the global LSP config instead
 
     require("ufo").setup({
       provider_selector = function(bufnr, filetype, buftype)

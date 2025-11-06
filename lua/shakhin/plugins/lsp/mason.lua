@@ -38,6 +38,8 @@ return {
 				"eslint", -- ESLint LSP
 				"jsonls", -- JSON LSP
 				"rust_analyzer", -- Rust LSP (если нужен)
+				"marksman", -- Markdown LSP (popular choice)
+				"ltex", -- Grammar/spell checker for Markdown (supports many languages)
 			},
 			-- ВАЖНО: НЕ настраиваем обработчики здесь
 			-- Пусть lspconfig.lua через vim.lsp.config() управляет настройкой
@@ -50,6 +52,7 @@ return {
 				"prettier", -- prettier formatter for JS/TS/HTML/CSS
 				"stylua", -- lua formatter
 				"black", -- python formatter
+				"autopep8", -- python formatter (PEP 8)
 				"isort", -- python import formatter
 				"sqlfluff", -- sql formatter and linter
 

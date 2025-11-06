@@ -44,7 +44,7 @@ return {
 
 			-- Terminal subgroup
 			{ "<leader>tt", desc = "Toggle terminal" },
-			{ "<leader>tf", desc = "Floating terminal" },
+			{ "<leader>t.", desc = "Floating terminal" }, -- Changed from <leader>tf
 			{ "<leader>th", desc = "Horizontal terminal" },
 			{ "<leader>tv", desc = "Vertical terminal" },
 			{ "<leader>t1", desc = "Terminal 1" },
@@ -56,7 +56,7 @@ return {
 			{ "<leader>tp", desc = "Run Python file" },
 			{ "<leader>ti", desc = "Run in IPython" },
 			{ "<leader>tI", desc = "Clean IPython" },
-			{ "<leader>tR", desc = "Python REPL" }, -- Changed from tP to avoid conflict
+			{ "<leader>tR", desc = "Python REPL" },
 
 			{ "<leader>b", group = "Buffer" },
 			{ "<leader>bd", desc = "Delete buffer" },
@@ -135,7 +135,8 @@ return {
 			-- LSP & DIAGNOSTICS
 			-- ============================================
 			{ "<leader>l", group = "LSP" },
-			{ "<leader>lf", desc = "Format (Python)" }, -- Changed from <leader>f
+			{ "<leader>ll", desc = "Trigger linting" }, -- Changed from <leader>l to avoid group conflict
+			{ "<leader>lf", desc = "Format (Python)" },
 			{ "<leader>lr", desc = "Rename" }, -- Alias for <leader>rn
 			{ "<leader>la", desc = "Code action" }, -- Alias for <leader>ca
 			{ "<leader>ls", desc = "LSP restart" }, -- Alias for <leader>rs
@@ -152,12 +153,27 @@ return {
 			{ "<leader>oi", desc = "Organize imports" },
 
 			-- ============================================
-			-- FORMATTING
+			-- FORMATTING & MOLTEN (Jupyter)
 			-- ============================================
-			{ "<leader>m", group = "Format" },
+			{ "<leader>m", group = "Format/Molten" },
+			-- Formatting
 			{ "<leader>mp", desc = "Format (default)" },
 			{ "<leader>ma", desc = "Format (autopep8)" },
 			{ "<leader>mr", desc = "Format (ruff)" },
+			{ "<leader>mt", desc = "Trim trailing whitespace" },
+			{ "<leader>mT", desc = "Trim trailing blank lines" },
+			-- Molten (Jupyter notebooks)
+			{ "<leader>mi", desc = "Initialize Molten kernel" },
+			{ "<leader>me", desc = "Evaluate line/visual" },
+			{ "<leader>mR", desc = "Re-evaluate Molten cell" }, -- Changed from <leader>mr
+			{ "<leader>mo", desc = "Show Molten output" },
+			{ "<leader>mh", desc = "Hide Molten output" },
+			{ "<leader>md", desc = "Delete Molten cell" },
+			{ "<leader>mx", desc = "Interrupt Molten kernel" },
+			{ "<leader>mk", desc = "Molten kernel info" },
+			{ "<leader>ms", desc = "Save Molten session" },
+			{ "<leader>ml", desc = "Load Molten session" },
+			{ "<leader>mI", desc = "Init Python3 kernel" },
 
 			-- ============================================
 			-- REFACTORING
@@ -181,6 +197,28 @@ return {
 			{ "<leader>w", group = "Workspace/Session" },
 			{ "<leader>wr", desc = "Restore session" },
 			{ "<leader>ws", desc = "Save session" },
+
+			-- ============================================
+			-- TELEKASTEN (Notes)
+			-- ============================================
+			{ "<leader>z", group = "Telekasten/Notes" },
+			{ "<leader>zf", desc = "Find notes" },
+			{ "<leader>zg", desc = "Search in notes" },
+			{ "<leader>zd", desc = "Go to today's note" },
+			{ "<leader>zz", desc = "Follow link" },
+			{ "<leader>zn", desc = "New note" },
+			{ "<leader>zc", desc = "Show calendar" },
+			{ "<leader>zb", desc = "Show backlinks" },
+			{ "<leader>zI", desc = "Insert image link" },
+			{ "<leader>zt", desc = "Show tags" },
+			{ "<leader>zT", desc = "Go to this week" },
+			{ "<leader>zW", desc = "Find weekly notes" },
+			{ "<leader>zl", desc = "Insert link" },
+			{ "<leader>zp", desc = "Command panel" },
+			{ "<leader>zr", desc = "Rename note" },
+			{ "<leader>zm", desc = "Preview image" },
+			{ "<leader>zi", desc = "Paste image and link" },
+			{ "<leader>z[", desc = "Toggle todo" },
 
 			-- ============================================
 			-- AI/SIDEKICK (changed from <leader>a to <leader>A)
@@ -221,11 +259,13 @@ return {
 			{ "[c", desc = "Previous hunk" },
 			{ "[d", desc = "Previous diagnostic" },
 			{ "[t", desc = "Previous todo" },
+			{ "[m", desc = "Previous Molten cell" }, -- Changed from [c to avoid gitsigns conflict
 
 			{ "]", group = "Next" },
 			{ "]c", desc = "Next hunk" },
 			{ "]d", desc = "Next diagnostic" },
 			{ "]t", desc = "Next todo" },
+			{ "]m", desc = "Next Molten cell" }, -- Changed from ]c to avoid gitsigns conflict
 
 			{ "z", group = "Fold" },
 			{ "zR", desc = "Open all folds" },
