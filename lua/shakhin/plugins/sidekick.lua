@@ -85,15 +85,26 @@ return {
 					},
 				},
 				-- Terminal multiplexer configuration (for session persistence)
+				-- IMPORTANT: Start Zellij BEFORE opening Neovim for persistence to work!
+				--   Example workflow: zellij -> nvim (sessions will persist)
+				--   Wrong workflow:   nvim only (no persistence, creates nested Zellij)
 				-- On Unix/Linux/macOS: enables persistent sessions across Neovim restarts
 				-- On Windows: sessions persist only while Neovim is running (mux unavailable)
 				mux = {
-					backend = vim.env.ZELLIJ and "zellij" or "tmux", -- auto-detect or default to tmux
-					enabled = vim.fn.has("win32") == 0, -- Enable only on Unix-like systems
-					create = "terminal", -- "terminal" | "window" | "split"
+					backend = "zellij", -- using zellij as the multiplexer backend
+					-- Only enable if: not Windows AND zellij installed AND already inside Zellij
+				enabled = vim.fn.has("win32") == 0
+					and vim.fn.executable("zellij") == 1
+					and vim.fn.getenv("ZELLIJ") ~= vim.NIL,
+					-- Create mode options:
+			--   "terminal" - embedded terminal inside Neovim with persistent Zellij session
+			--   NOTE: Zellij ONLY supports "terminal" mode (window/split are tmux-only)
+			--   Even in "terminal" mode, sessions persist via Zellij's attach mechanism
+			create = "terminal", -- Only supported mode for Zellij (sessions still persist!)
+					-- NOTE: split config below is ignored for Zellij (tmux-only feature)
 					split = {
-						vertical = true,
-						size = 0.5,
+						vertical = true, -- true = vertical split (side-by-side), false = horizontal
+						size = 0.5, -- 0.5 = 50% of screen width/height
 					},
 				},
 				-- Context functions for prompts
