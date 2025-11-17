@@ -1,6 +1,6 @@
 return {
 	"MeanderingProgrammer/render-markdown.nvim",
-	ft = { "markdown" },
+	ft = { "markdown", "markdown.telekasten" },
 	dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
 	opts = {
 		-- Render style
@@ -62,7 +62,7 @@ return {
 
 		-- Keymaps for markdown files only
 		vim.api.nvim_create_autocmd("FileType", {
-			pattern = "markdown",
+			pattern = { "markdown", "markdown.telekasten" },
 			callback = function(args)
 				local bufnr = args.buf
 				vim.keymap.set("n", "<leader>mr", "<cmd>RenderMarkdown toggle<cr>", {

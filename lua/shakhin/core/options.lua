@@ -1,5 +1,8 @@
 vim.cmd("let g:netrw_liststyle = 3")
 
+-- Disable netrw's gx mapping (we'll define our own for telekasten)
+vim.g.netrw_nogx = 1
+
 local opt = vim.opt
 
 opt.relativenumber = true

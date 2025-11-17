@@ -5,7 +5,9 @@ return {
     "nvim-lua/plenary.nvim",
   },
   config = function()
-    local home = vim.fn.expand("~/zettelkasten")
+    -- CRITICAL: Normalize path to forward slashes for Windows compatibility
+    -- This ensures path matching works correctly when Telescope returns forward-slash paths
+    local home = vim.fn.expand("~/zettelkasten"):gsub("\\", "/")
 
     require("telekasten").setup({
       home = home,
@@ -100,5 +102,78 @@ return {
 
     -- Навигация
     keymap.set("n", "<leader>z[", "<cmd>Telekasten toggle_todo<cr>", { desc = "Toggle todo" })
+
+    -- Открытие заметок в splits
+    keymap.set("n", "<leader>zs", function()
+      vim.cmd("vsplit")
+      vim.cmd("Telekasten find_notes")
+    end, { desc = "Find notes in vertical split" })
+
+    keymap.set("n", "<leader>zh", function()
+      vim.cmd("split")
+      vim.cmd("Telekasten find_notes")
+    end, { desc = "Find notes in horizontal split" })
+
+    -- Setup keybindings for telekasten files (including after filetype change)
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = { "telekasten", "markdown", "markdown.telekasten" },
+      callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local filepath = vim.api.nvim_buf_get_name(bufnr)
+
+        -- Check if file is in zettelkasten directory
+        if filepath:match(vim.fn.expand("~/zettelkasten"):gsub("\\", "/")) then
+          -- Telekasten wiki-style navigation [[link]]
+          vim.keymap.set("n", "gf", "<cmd>Telekasten follow_link<cr>", { buffer = bufnr, desc = "Follow link" })
+          vim.keymap.set("n", "<CR>", "<cmd>Telekasten follow_link<cr>", { buffer = bufnr, desc = "Follow link (Enter)" })
+
+          -- Enhanced gx for markdown links [text](#anchor) or [text](url)
+          vim.keymap.set("n", "gx", function()
+            local line = vim.api.nvim_get_current_line()
+            local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+
+            -- Check for markdown link: [text](link)
+            local link_pattern = "%[.-%]%((.-)%)"
+            for link in line:gmatch(link_pattern) do
+              if link:match("^#") then
+                -- Internal anchor link - jump to heading
+                local anchor = link:sub(2) -- remove #
+                -- Convert anchor format: "резервы-под-ожидаемые-убытки-ecl" -> search pattern
+                local search_pattern = anchor:gsub("%-", "[ -]")
+
+                -- Try to find the heading (case insensitive)
+                local found = vim.fn.search("^#\\+\\s\\+.*" .. vim.fn.escape(search_pattern, "\\"), "wi")
+                if found == 0 then
+                  print("Heading not found: " .. anchor)
+                end
+                return
+              elseif link:match("^https?://") then
+                -- External URL - open in browser (Windows)
+                vim.fn.jobstart({ "cmd.exe", "/c", "start", '""', link }, { detach = true })
+                return
+              end
+            end
+
+            -- Check for wiki-style link [[...]]
+            if line:match("%[%[.-%]%]") then
+              vim.cmd("Telekasten follow_link")
+              return
+            end
+
+            -- Default: try telekasten follow_link
+            vim.cmd("Telekasten follow_link")
+          end, { buffer = bufnr, desc = "Follow markdown/wiki link" })
+        end
+      end,
+    })
+
+    -- Change filetype from 'telekasten' to 'markdown.telekasten' after telekasten sets it
+    -- This allows markdown plugins to work while preserving telekasten functionality
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "telekasten",
+      callback = function()
+        vim.bo.filetype = "markdown.telekasten"
+      end,
+    })
   end,
 }

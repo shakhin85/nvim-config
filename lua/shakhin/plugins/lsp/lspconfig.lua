@@ -307,7 +307,7 @@ return {
 		-- Marksman (Markdown LSP - popular choice)
 		vim.lsp.config("marksman", {
 			cmd = { get_mason_bin("marksman"), "server" },
-			filetypes = { "markdown", "markdown.mdx" },
+			filetypes = { "markdown", "markdown.mdx", "telekasten" },
 			settings = {
 				-- Marksman doesn't have many settings, it works well out of the box
 			},
@@ -316,7 +316,7 @@ return {
 		-- LTeX (Grammar and spell checker for Markdown and text)
 		vim.lsp.config("ltex", {
 			cmd = { get_mason_bin("ltex-ls") },
-			filetypes = { "markdown", "text", "tex", "gitcommit" },
+			filetypes = { "markdown", "text", "tex", "gitcommit", "telekasten" },
 			settings = {
 				ltex = {
 					-- Set your language(s) - English by default, add "ru-RU" for Russian
