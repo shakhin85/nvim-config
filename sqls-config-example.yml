@@ -1,0 +1,35 @@
+# Example sqls configuration file
+# Copy this to your project root as .sqls/config.yml and modify as needed
+#
+# For Windows paths, use forward slashes or escape backslashes
+# Example: C:/path/to/db or C:\\path\\to\\db
+
+# PostgreSQL connection example
+lowercaseKeywords: false
+connections:
+  - alias: dev_postgres
+    driver: postgresql
+    dataSourceName: host=127.0.0.1 port=5432 user=postgres password=yourpassword dbname=mydb sslmode=disable
+
+  # MySQL connection example
+  - alias: dev_mysql
+    driver: mysql
+    dataSourceName: root:yourpassword@tcp(127.0.0.1:3306)/mydb
+
+  # SQL Server (T-SQL) connection example
+  - alias: dev_sqlserver
+    driver: mssql
+    dataSourceName: sqlserver://sa:YourPassword@localhost:1433?database=mydb
+
+  # Oracle connection example (requires Oracle instant client)
+  - alias: dev_oracle
+    driver: oracle
+    dataSourceName: oracle://user:password@localhost:1521/ORCL
+
+  # SQLite connection example
+  - alias: dev_sqlite
+    driver: sqlite3
+    dataSourceName: C:/path/to/database.db
+
+# Uncomment to set a default connection
+# defaultConnection: dev_postgres

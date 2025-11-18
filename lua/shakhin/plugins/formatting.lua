@@ -62,10 +62,30 @@ return {
         autopep8 = {
           command = get_tool_cmd("autopep8"),
         },
-        -- SQL formatter
-        sqlfluff = {
+        -- SQL formatters for different dialects
+        sqlfluff_postgres = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
+          args = { "format", "--dialect", "postgres", "$FILENAME" },
+          stdin = false,
+        },
+        sqlfluff_mysql = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
+          args = { "format", "--dialect", "mysql", "$FILENAME" },
+          stdin = false,
+        },
+        sqlfluff_tsql = {
           command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
           args = { "format", "--dialect", "tsql", "$FILENAME" },
+          stdin = false,
+        },
+        sqlfluff_oracle = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
+          args = { "format", "--dialect", "oracle", "$FILENAME" },
+          stdin = false,
+        },
+        sqlfluff_ansi = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd",
+          args = { "format", "--dialect", "ansi", "$FILENAME" },
           stdin = false,
         },
       },
@@ -85,7 +105,9 @@ return {
         liquid = { "prettier" },
         lua = { "stylua" },
         python = { "ruff_fix", "ruff_organize_imports", "ruff_format" },
-        sql = { "sqlfluff" },
+        sql = { "sqlfluff_postgres" }, -- Default to PostgreSQL, can be changed via command
+        mysql = { "sqlfluff_mysql" },
+        plsql = { "sqlfluff_oracle" },
       },
       format_on_save = {
         lsp_fallback = true,
@@ -161,5 +183,31 @@ return {
         end
       end
     end, { desc = "Show configured formatters for current filetype" })
+
+    -- SQL dialect switching commands
+    vim.api.nvim_create_user_command("SqlSetPostgres", function()
+      conform.formatters_by_ft.sql = { "sqlfluff_postgres" }
+      print("SQL formatter set to PostgreSQL")
+    end, { desc = "Set SQL formatter to PostgreSQL dialect" })
+
+    vim.api.nvim_create_user_command("SqlSetMySQL", function()
+      conform.formatters_by_ft.sql = { "sqlfluff_mysql" }
+      print("SQL formatter set to MySQL")
+    end, { desc = "Set SQL formatter to MySQL dialect" })
+
+    vim.api.nvim_create_user_command("SqlSetTSQL", function()
+      conform.formatters_by_ft.sql = { "sqlfluff_tsql" }
+      print("SQL formatter set to T-SQL (SQL Server)")
+    end, { desc = "Set SQL formatter to T-SQL dialect" })
+
+    vim.api.nvim_create_user_command("SqlSetOracle", function()
+      conform.formatters_by_ft.sql = { "sqlfluff_oracle" }
+      print("SQL formatter set to Oracle/PL-SQL")
+    end, { desc = "Set SQL formatter to Oracle dialect" })
+
+    vim.api.nvim_create_user_command("SqlSetANSI", function()
+      conform.formatters_by_ft.sql = { "sqlfluff_ansi" }
+      print("SQL formatter set to ANSI SQL")
+    end, { desc = "Set SQL formatter to ANSI SQL dialect" })
   end,
 }

@@ -40,6 +40,7 @@ return {
 				"rust_analyzer", -- Rust LSP (если нужен)
 				"marksman", -- Markdown LSP (popular choice)
 				"ltex", -- Grammar/spell checker for Markdown (supports many languages)
+				"sqls", -- SQL LSP for multiple dialects
 			},
 			-- ВАЖНО: НЕ настраиваем обработчики здесь
 			-- Пусть lspconfig.lua через vim.lsp.config() управляет настройкой

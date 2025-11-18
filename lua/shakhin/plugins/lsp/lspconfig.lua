@@ -298,10 +298,69 @@ return {
 			},
 		})
 
-		-- SQL (T-SQL)
+		-- SQL Language Server (supports multiple dialects)
 		vim.lsp.config("sqls", {
 			cmd = { get_mason_bin("sqls") },
-			filetypes = { "sql", "mysql" },
+			filetypes = { "sql", "mysql", "plsql" },
+			root_dir = vim.fs.root(0, { ".git", ".sqls" }),
+			single_file_support = true,
+			settings = {
+				sqls = {
+					connections = {
+						-- Example connections - configure per project in .sqls/config.yml
+						-- {
+						--   driver = "postgresql",
+						--   dataSourceName = "host=127.0.0.1 port=5432 user=postgres password=password dbname=mydb sslmode=disable"
+						-- },
+						-- {
+						--   driver = "mysql",
+						--   dataSourceName = "user:password@tcp(127.0.0.1:3306)/mydb"
+						-- },
+						-- {
+						--   driver = "mssql",
+						--   dataSourceName = "sqlserver://user:password@localhost:1433?database=mydb"
+						-- },
+						-- {
+						--   driver = "oracle",
+						--   dataSourceName = "oracle://user:password@localhost:1521/dbname"
+						-- },
+					},
+				},
+			},
+			on_attach = function(client, bufnr)
+				-- SQL-specific keymaps
+				local opts = { buffer = bufnr, silent = true }
+				vim.keymap.set(
+					"n",
+					"<leader>se",
+					"<cmd>SqlsExecuteQuery<CR>",
+					vim.tbl_extend("force", opts, { desc = "Execute SQL query" })
+				)
+				vim.keymap.set(
+					"v",
+					"<leader>se",
+					"<cmd>SqlsExecuteQuery<CR>",
+					vim.tbl_extend("force", opts, { desc = "Execute selected SQL" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>sc",
+					"<cmd>SqlsSwitchConnection<CR>",
+					vim.tbl_extend("force", opts, { desc = "Switch SQL connection" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>sd",
+					"<cmd>SqlsShowDatabases<CR>",
+					vim.tbl_extend("force", opts, { desc = "Show databases" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>ss",
+					"<cmd>SqlsShowSchemas<CR>",
+					vim.tbl_extend("force", opts, { desc = "Show schemas" })
+				)
+			end,
 		})
 
 		-- Marksman (Markdown LSP - popular choice)
@@ -356,7 +415,7 @@ return {
 			"cssls",
 			"jsonls",
 			"rust_analyzer",
-			"sqls",
+			"sqls", -- SQL Language Server
 			"marksman",
 			"ltex",
 		})
@@ -415,5 +474,19 @@ return {
 			end,
 			desc = "Restart Pyright when changing directory to detect new .venv",
 		})
+
+		-- SQL-specific commands
+		vim.api.nvim_create_user_command("SqlsRestart", function()
+			vim.cmd("LspRestart sqls")
+		end, { desc = "Restart SQL Language Server" })
+
+		vim.api.nvim_create_user_command("SqlInfo", function()
+			print("SQL Development Tools:")
+			print("  sqls LSP: " .. get_mason_bin("sqls"))
+			print("  sqlfluff: " .. vim.fn.stdpath("data") .. "/mason/bin/sqlfluff.cmd")
+			print("\nSupported dialects: PostgreSQL, MySQL, T-SQL (SQL Server), Oracle (PL-SQL)")
+			print("\nTo configure connections, create a .sqls/config.yml in your project root")
+			print("See: https://github.com/sqls-server/sqls#configuration")
+		end, { desc = "Show SQL development tool information" })
 	end,
 }
