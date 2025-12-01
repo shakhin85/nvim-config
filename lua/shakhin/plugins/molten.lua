@@ -97,13 +97,19 @@ return {
 	{
 		"3rd/image.nvim",
 		enabled = function()
-			-- Не устанавливаем и не загружаем в headless режиме, на Windows, или в SSH/VM без дисплея
-			-- image.nvim использует Unix-специфичные системные вызовы (ioctl) и требует графический терминал
 			local is_headless = #vim.api.nvim_list_uis() == 0
 			local is_windows = vim.fn.has("win32") == 1
+			local is_wsl = vim.fn.has("wsl") == 1 or os.getenv("WSL_DISTRO_NAME") ~= nil
 			local has_display = os.getenv("DISPLAY") ~= nil or os.getenv("WAYLAND_DISPLAY") ~= nil
-
-			return not is_headless and not is_windows and has_display
+			return not is_headless and not is_windows and not is_wsl and has_display
+		end,
+		config = function(_, opts)
+			local ok, image = pcall(require, "image")
+			if ok then
+				image.setup(opts)
+			else
+				vim.notify("Failed to load image.nvim", vim.log.levels.WARN)
+			end
 		end,
 		opts = {
 			backend = "ueberzug",
